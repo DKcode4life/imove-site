@@ -1563,9 +1563,19 @@ h3 {
   }
 
   .survey-choice,
-  .time-slots,
   .booking-fields {
     grid-template-columns: 1fr;
+  }
+
+  .time-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .time-slot {
+    min-height: 38px;
+    padding: 7px 6px;
+    font-size: 0.92rem;
   }
 
   .booking-fields .form-field:first-child {
@@ -1576,6 +1586,12 @@ h3 {
   .contact-form button,
   .form-note {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .time-slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
