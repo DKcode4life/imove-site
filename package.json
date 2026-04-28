@@ -1,0 +1,14 @@
+{
+  "name": "imove-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "iMove removals and storage website with Google Calendar-backed survey booking.",
+  "main": "preview-server.js",
+  "scripts": {
+    "start": "node preview-server.js",
+    "check": "node --check preview-server.js && node --check script.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
