@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Book a Survey - iMove Removals and Storage</title>
+    <meta name="description" content="Book a video or physical iMove removals survey using live Google Calendar availability.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header" data-header>
+      <a class="brand" href="index.html#top" aria-label="iMove home">
+        <img src="https://myimove.co.uk/wp-content/uploads/2025/04/Untitled-design-2.png" alt="iMove Removals and Storage">
+      </a>
+
+      <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-nav-toggle>
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="primary-nav" data-nav>
+        <a href="index.html#top">Home</a>
+        <a href="services.html">Services</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="index.html#steps">Planning</a>
+        <a href="index.html#contact">Contact</a>
+        <a class="mobile-survey-link active" href="book-survey.html">Book a Survey</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="text-link" href="tel:01638255255">01638 255 255</a>
+        <a class="btn btn-small btn-green" href="https://wa.me/441638255255">WhatsApp</a><a class="btn btn-small btn-primary header-survey-btn" href="book-survey.html">Book a Survey</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="booking-page-hero">
+        <div class="booking-page-bg" aria-hidden="true"></div>
+        <div class="wrap booking-page-grid">
+          <div class="booking-page-copy">
+            <p class="eyebrow">Live survey availability</p>
+            <h1>Book your iMove survey</h1>
+            <p class="hero-lede">Choose a video survey or a physical home visit using the same live calendar availability from the homepage booking tool.</p>
+            <div class="trust-strip" aria-label="Booking highlights">
+              <span>Video surveys</span>
+              <span>Physical visits</span>
+              <span>Live availability</span>
+              <span>Google Calendar synced</span>
+            </div>
+          </div>
+
+          <aside class="hero-booking booking-page-card" aria-labelledby="survey-booking-title">
+            <div class="booking-card-header">
+              <p class="eyebrow">Instant survey booking</p>
+              <h2 id="survey-booking-title">Select your appointment</h2>
+              <p>Pick a survey type first, then choose a date, time, and your contact details.</p>
+            </div>
+
+            <form class="survey-form" data-survey-form>
+              <fieldset class="survey-choice">
+                <legend>Survey type</legend>
+                <label>
+                  <input type="radio" name="survey_type" value="Video survey" checked>
+                  <span>
+                    <strong>Video survey</strong>
+                    <small>Fast, simple Zoom-style call</small>
+                  </span>
+                </label>
+                <label>
+                  <input type="radio" name="survey_type" value="Physical survey">
+                  <span>
+                    <strong>Physical survey</strong>
+                    <small>In-person home visit</small>
+                  </span>
+                </label>
+              </fieldset>
+
+              <p class="mobile-booking-hint">Choose your survey type to see available dates and times.</p>
+
+              <div class="booking-details" data-booking-details>
+                <label class="form-field">
+                  <span>Select a date</span>
+                  <select name="survey_date" data-survey-date required></select>
+                </label>
+
+                <div class="time-picker">
+                  <span>Available times</span>
+                  <div class="time-slots" data-time-slots role="radiogroup" aria-label="Available appointment times"></div>
+                  <input type="hidden" name="appointment_time" data-appointment-time required>
+                </div>
+
+                <div class="booking-fields">
+                  <label class="form-field">
+                    <span>Name</span>
+                    <input type="text" name="name" placeholder="Your name" required>
+                  </label>
+                  <label class="form-field">
+                    <span>Phone</span>
+                    <input type="tel" name="phone" placeholder="Phone number" required>
+                  </label>
+                  <label class="form-field">
+                    <span>Email</span>
+                    <input type="email" name="email" placeholder="Email address" required>
+                  </label>
+                </div>
+
+                <fieldset class="address-fields" data-address-fields hidden>
+                  <legend>Survey address</legend>
+                  <label class="form-field">
+                    <span>Full address</span>
+                    <input type="text" name="address" placeholder="House number, street, town, postcode" data-address-required>
+                  </label>
+                </fieldset>
+
+                <button class="btn btn-primary" type="submit" data-booking-submit disabled>Book survey</button>
+                <p class="booking-note" data-survey-note aria-live="polite">Availability is shown for the next bookable survey dates.</p>
+              </div>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <img src="https://myimove.co.uk/wp-content/uploads/2025/04/Untitled-design-2.png" alt="iMove Removals and Storage">
+          <p>Professional removals and storage services across East Anglia.</p>
+        </div>
+        <div>
+          <h3>Company info</h3>
+          <a href="services.html">Services</a>
+          <a href="book-survey.html">Book a Survey</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="index.html#contact">Contact</a>
+          <a href="index.html#contact">Get a quote</a>
+        </div>
+        <div>
+          <h3>iGroup</h3>
+          <a href="https://myimove.co.uk/">iMove - removals</a>
+          <a href="https://myispace.co.uk/">iSpace - storage</a>
+          <a href="https://myidrive.co.uk/">iDrive - van rental</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 iMove - All rights reserved</span>
+      </div>
+    </footer>
+
+    <script src="script.js?v=20260505-3"></script>
+  </body>
+</html>

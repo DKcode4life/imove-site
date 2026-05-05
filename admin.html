@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>iMove Admin</title>
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="admin-page">
+    <main class="admin-shell" data-admin-app>
+      <section class="admin-hero">
+        <div>
+          <p class="eyebrow">Hidden admin area</p>
+          <h1>iMove website settings</h1>
+          <p>Adjust estimator pricing and gallery content. Save changes, then refresh the public pages to see them.</p>
+        </div>
+        <a class="btn btn-outline-dark" href="index.html#top">Back to website</a>
+      </section>
+
+      <p class="admin-note" data-admin-note>Loading settings...</p>
+
+      <section class="admin-panel">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Estimator Price Adjustments</p>
+            <h2>Estimator settings</h2>
+          </div>
+          <button class="btn btn-primary" type="button" data-admin-save>Save all settings</button>
+        </div>
+
+        <div class="admin-mini-grid">
+          <label>
+            <span>High estimate minimum uplift</span>
+            <input type="number" step="1" data-estimator-setting="highEstimateMinimum">
+          </label>
+          <label>
+            <span>High estimate percentage uplift</span>
+            <input type="number" step="0.01" data-estimator-setting="highEstimatePercent">
+          </label>
+        </div>
+
+        <div class="admin-table-block">
+          <h3>Property base prices and volume</h3>
+          <div class="admin-table" data-admin-estimator-table="properties"></div>
+        </div>
+
+        <div class="admin-table-block">
+          <h3>Furnished multipliers</h3>
+          <div class="admin-table" data-admin-estimator-table="furnished"></div>
+        </div>
+
+        <div class="admin-table-block">
+          <h3>Distance bands</h3>
+          <div class="admin-table" data-admin-estimator-table="distances"></div>
+        </div>
+
+        <div class="admin-table-block">
+          <h3>Extras</h3>
+          <div class="admin-table" data-admin-estimator-table="extras"></div>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-heading">
+          <div>
+            <p class="eyebrow">Gallery Adjustment</p>
+            <h2>Gallery settings</h2>
+          </div>
+          <button class="btn btn-secondary" type="button" data-gallery-add>Add gallery item</button>
+        </div>
+
+        <p class="admin-help">To replace a photo, upload it into <strong>assets/gallery</strong>, then update the image path below, for example <strong>assets/gallery/37.jpeg</strong>.</p>
+        <div class="admin-gallery-list" data-admin-gallery-list></div>
+      </section>
+    </main>
+
+    <script src="admin.js?v=20260505-1"></script>
+  </body>
+</html>

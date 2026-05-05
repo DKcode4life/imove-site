@@ -16,6 +16,27 @@ const surveyNote = document.querySelector("[data-survey-note]");
 const bookingSubmit = document.querySelector("[data-booking-submit]");
 const addressFields = document.querySelector("[data-address-fields]");
 const addressRequiredFields = document.querySelectorAll("[data-address-required]");
+const estimator = document.querySelector("[data-estimator]");
+const estimatorSteps = document.querySelectorAll("[data-estimator-step]");
+const estimatorProgressSteps = document.querySelectorAll("[data-progress-step]");
+const estimatorStage = document.querySelector("[data-estimator-stage]");
+const estimatorPrice = document.querySelector("[data-estimator-price]");
+const estimatorVolume = document.querySelector("[data-estimator-volume]");
+const estimatorSummary = document.querySelector("[data-estimator-summary]");
+const estimatorReview = document.querySelector("[data-estimator-review]");
+const estimatorContactForm = document.querySelector("[data-estimator-contact-form]");
+const estimatorNote = document.querySelector("[data-estimator-note]");
+const estimatorSubmit = document.querySelector("[data-estimator-submit]");
+const estimatorSuccess = document.querySelector("[data-estimator-success]");
+let galleryItems = [...document.querySelectorAll("[data-gallery-item]")];
+const galleryFilterButtons = document.querySelectorAll("[data-gallery-filter]");
+const galleryLightbox = document.querySelector("[data-gallery-lightbox]");
+const galleryLightboxImage = document.querySelector("[data-gallery-lightbox-image]");
+const galleryLightboxTitle = document.querySelector("[data-gallery-lightbox-title]");
+const galleryLightboxCount = document.querySelector("[data-gallery-lightbox-count]");
+const galleryClose = document.querySelector("[data-gallery-close]");
+const galleryPrev = document.querySelector("[data-gallery-prev]");
+const galleryNext = document.querySelector("[data-gallery-next]");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const fallbackSurveyAvailability = [
@@ -86,6 +107,81 @@ const stepContent = {
   }
 };
 
+const estimatorState = {
+  step: 1,
+  property: null,
+  furnished: null,
+  distance: null,
+  extras: new Map(),
+  estimate: null
+};
+
+let estimatorSettings = {
+  highEstimateMinimum: 190,
+  highEstimatePercent: 0.26
+};
+
+const escapeHtml = (value) => String(value ?? "")
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;");
+
+const renderEstimatorOptions = (settings) => {
+  if (!estimator || !settings?.estimator) return;
+
+  estimatorSettings = {
+    highEstimateMinimum: Number(settings.estimator.highEstimateMinimum || 190),
+    highEstimatePercent: Number(settings.estimator.highEstimatePercent || 0.26)
+  };
+
+  const propertyGrid = estimator.querySelector(".property-grid");
+  const furnishedGrid = estimator.querySelector(".furnished-grid");
+  const extrasGrid = estimator.querySelector(".extras-grid");
+  const distanceGrid = estimator.querySelector(".distance-grid");
+
+  if (propertyGrid) {
+    propertyGrid.innerHTML = settings.estimator.properties.map((item) => `
+      <button type="button" data-estimator-option="property" data-label="${escapeHtml(item.label)}" data-volume="${Number(item.volume)}" data-price="${Number(item.price)}">${escapeHtml(item.label)}</button>
+    `).join("");
+  }
+
+  if (furnishedGrid) {
+    furnishedGrid.innerHTML = settings.estimator.furnished.map((item) => `
+      <button type="button" data-estimator-option="furnished" data-label="${escapeHtml(item.label)}" data-multiplier="${Number(item.multiplier)}"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.description)}</small></button>
+    `).join("");
+  }
+
+  if (extrasGrid) {
+    extrasGrid.innerHTML = settings.estimator.extras.map((item) => `
+      <button type="button" data-estimator-extra="${escapeHtml(item.label)}" data-price="${Number(item.price)}" data-volume="${Number(item.volume)}">${escapeHtml(item.label)}</button>
+    `).join("");
+  }
+
+  if (distanceGrid) {
+    distanceGrid.innerHTML = settings.estimator.distances.map((item) => `
+      <button type="button" data-estimator-option="distance" data-label="${escapeHtml(item.label)}" data-distance="${Number(item.distance)}" data-price="${Number(item.price)}"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.description)}</small></button>
+    `).join("");
+  }
+};
+
+const getGalleryLayoutClass = (layout) => ["wide", "tall"].includes(layout) ? layout : "";
+
+const renderGalleryOptions = (settings) => {
+  const galleryGrid = document.querySelector("[data-gallery-grid]");
+  if (!galleryGrid || !Array.isArray(settings?.gallery)) return;
+
+  galleryGrid.innerHTML = settings.gallery.map((item, index) => `
+    <article class="gallery-tile ${getGalleryLayoutClass(item.layout)}" data-gallery-item data-category="${escapeHtml(item.category)}" data-title="${escapeHtml(item.title)}" data-index="${index}">
+      <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.alt || item.title)}">
+      <button type="button"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.title)}</strong></button>
+    </article>
+  `).join("");
+
+  galleryItems = [...document.querySelectorAll("[data-gallery-item]")];
+  bindGalleryItems();
+};
+
 navToggle?.addEventListener("click", () => {
   const isOpen = nav.classList.toggle("open");
   navToggle.setAttribute("aria-expanded", String(isOpen));
@@ -98,12 +194,293 @@ nav?.addEventListener("click", (event) => {
   }
 });
 
+const formatMoney = (value) => `£${Math.round(value).toLocaleString("en-GB")}`;
+
+const roundToTen = (value) => Math.round(value / 10) * 10;
+
+const updateEstimatorProgress = () => {
+  const visibleStep = Math.min(estimatorState.step, 3);
+
+  estimatorProgressSteps.forEach((step) => {
+    const stepNumber = Number(step.dataset.progressStep);
+    step.classList.toggle("active", stepNumber === visibleStep);
+    step.classList.toggle("complete", stepNumber < visibleStep);
+  });
+};
+
+const updateEstimatorActions = () => {
+  if (!estimator) return;
+
+  const propertyReady = Boolean(estimatorState.property && estimatorState.furnished);
+  const distanceReady = Boolean(estimatorState.distance);
+
+  estimator.querySelectorAll("[data-estimator-step='1'] [data-estimator-next]")
+    .forEach((button) => {
+      button.disabled = !propertyReady;
+    });
+
+  estimator.querySelectorAll("[data-estimator-step='2'] [data-estimator-next]")
+    .forEach((button) => {
+      button.disabled = !distanceReady;
+    });
+};
+
+const calculateEstimate = () => {
+  const property = estimatorState.property;
+  const furnished = estimatorState.furnished;
+  const distance = estimatorState.distance;
+
+  if (!property || !furnished || !distance) return;
+
+  const extras = [...estimatorState.extras.values()];
+  const extraPrice = extras.reduce((total, item) => total + item.price, 0);
+  const extraVolume = extras.reduce((total, item) => total + item.volume, 0);
+  const volume = Math.round((property.volume + extraVolume) * furnished.multiplier);
+  const lowEstimate = roundToTen((property.price + distance.price + extraPrice) * furnished.multiplier);
+  const highEstimate = roundToTen(lowEstimate + Math.max(estimatorSettings.highEstimateMinimum, lowEstimate * estimatorSettings.highEstimatePercent));
+  const extrasLabel = extras.length ? ` - ${extras.map((item) => item.label).join(", ")}` : "";
+
+  estimatorState.estimate = {
+    low: lowEstimate,
+    high: highEstimate,
+    volume,
+    extrasLabel
+  };
+
+  if (estimatorPrice) {
+    estimatorPrice.textContent = `${formatMoney(lowEstimate)} - ${formatMoney(highEstimate)}`;
+  }
+
+  if (estimatorVolume) {
+    estimatorVolume.textContent = `Based on ~${volume.toLocaleString("en-GB")} cu ft`;
+  }
+
+  if (estimatorSummary) {
+    estimatorSummary.textContent = `${property.label} - ${furnished.label} - ${distance.label} (${distance.distance} miles)${extrasLabel}`;
+  }
+};
+
+const renderEstimatorReview = () => {
+  if (!estimatorReview) return;
+
+  const estimate = estimatorState.estimate;
+  const property = estimatorState.property;
+  const furnished = estimatorState.furnished;
+  const distance = estimatorState.distance;
+  const extras = [...estimatorState.extras.values()].map((item) => item.label).join(", ") || "None selected";
+
+  if (!estimate || !property || !furnished || !distance) {
+    estimatorReview.innerHTML = "";
+    return;
+  }
+
+  estimatorReview.innerHTML = `
+    <div><strong>Estimate:</strong> ${formatMoney(estimate.low)} - ${formatMoney(estimate.high)}</div>
+    <div><strong>Property:</strong> ${property.label} - ${furnished.label} - ${distance.label}</div>
+    <div><strong>Extras:</strong> ${extras}</div>
+    <div><strong>Volume:</strong> ~${estimate.volume.toLocaleString("en-GB")} cu ft</div>
+  `;
+};
+
+const showEstimatorStep = (nextStep) => {
+  if (!estimator || nextStep === estimatorState.step) return;
+
+  const previousStep = estimatorState.step;
+  const nextPanel = estimator.querySelector(`[data-estimator-step="${nextStep}"]`);
+  const currentPanel = estimator.querySelector(`[data-estimator-step="${previousStep}"]`);
+  if (!nextPanel) return;
+
+  estimatorState.step = nextStep;
+  updateEstimatorProgress();
+
+  if (nextStep === 3) {
+    calculateEstimate();
+  }
+
+  if (nextStep === 4) {
+    calculateEstimate();
+    renderEstimatorReview();
+  }
+
+  currentPanel?.classList.remove("active", "from-left", "exit-left");
+  if (nextStep < previousStep) {
+    nextPanel.classList.add("from-left");
+  }
+  nextPanel.classList.add("active");
+  window.requestAnimationFrame(() => {
+    nextPanel.classList.remove("from-left");
+  });
+
+  if (estimatorStage) {
+    estimatorStage.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+  }
+};
+
+const selectEstimatorOption = (button) => {
+  const group = button.dataset.estimatorOption;
+  if (!group) return;
+
+  estimator?.querySelectorAll(`[data-estimator-option="${group}"]`)
+    .forEach((option) => option.classList.remove("active"));
+  button.classList.add("active");
+
+  if (group === "property") {
+    estimatorState.property = {
+      label: button.dataset.label,
+      price: Number(button.dataset.price),
+      volume: Number(button.dataset.volume)
+    };
+    estimator?.classList.add("details-open");
+  }
+
+  if (group === "furnished") {
+    estimatorState.furnished = {
+      label: button.dataset.label,
+      multiplier: Number(button.dataset.multiplier)
+    };
+  }
+
+  if (group === "distance") {
+    estimatorState.distance = {
+      label: button.dataset.label,
+      distance: Number(button.dataset.distance),
+      price: Number(button.dataset.price)
+    };
+  }
+
+  updateEstimatorActions();
+};
+
+const toggleEstimatorExtra = (button) => {
+  const label = button.dataset.estimatorExtra;
+  if (!label) return;
+
+  button.classList.toggle("active");
+
+  if (button.classList.contains("active")) {
+    estimatorState.extras.set(label, {
+      label,
+      price: Number(button.dataset.price),
+      volume: Number(button.dataset.volume)
+    });
+  } else {
+    estimatorState.extras.delete(label);
+  }
+};
+
+estimator?.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-estimator-option]");
+  if (option) {
+    selectEstimatorOption(option);
+    return;
+  }
+
+  const extra = event.target.closest("[data-estimator-extra]");
+  if (extra) {
+    toggleEstimatorExtra(extra);
+  }
+});
+
+estimator?.querySelectorAll("[data-estimator-next]").forEach((button) => {
+  button.addEventListener("click", () => showEstimatorStep(estimatorState.step + 1));
+});
+
+estimator?.querySelectorAll("[data-estimator-back]").forEach((button) => {
+  button.addEventListener("click", () => showEstimatorStep(estimatorState.step - 1));
+});
+
+estimator?.querySelectorAll("[data-estimator-adjust]").forEach((button) => {
+  button.addEventListener("click", () => {
+    estimator.classList.remove("is-submitted");
+    estimatorContactForm?.removeAttribute("hidden");
+    if (estimatorSuccess) {
+      estimatorSuccess.hidden = true;
+    }
+    showEstimatorStep(1);
+  });
+});
+
+updateEstimatorActions();
+
+estimatorContactForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (!estimatorState.estimate || !estimatorState.property || !estimatorState.furnished || !estimatorState.distance) {
+    showEstimatorStep(1);
+    return;
+  }
+
+  if (!estimatorContactForm.checkValidity()) {
+    estimatorContactForm.reportValidity();
+    return;
+  }
+
+  const formData = new FormData(estimatorContactForm);
+  const extras = [...estimatorState.extras.values()].map((item) => item.label);
+  const payload = {
+    source: "iMove website estimator",
+    customer: Object.fromEntries(formData.entries()),
+    estimate: {
+      low: estimatorState.estimate.low,
+      high: estimatorState.estimate.high,
+      volume: estimatorState.estimate.volume
+    },
+    property: estimatorState.property,
+    furnished: estimatorState.furnished,
+    distance: estimatorState.distance,
+    extras
+  };
+
+  if (estimatorSubmit) {
+    estimatorSubmit.disabled = true;
+  }
+
+  if (estimatorNote) {
+    estimatorNote.textContent = "Sending your estimator request...";
+  }
+
+  try {
+    const response = await fetch("/api/estimate-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message || "The estimator request could not be sent.");
+    }
+
+    estimatorContactForm.reset();
+    estimatorContactForm.setAttribute("hidden", "");
+    estimator?.classList.add("is-submitted");
+    if (estimatorSuccess) {
+      estimatorSuccess.hidden = false;
+    }
+    if (estimatorNote) {
+      estimatorNote.textContent = "";
+    }
+  } catch (error) {
+    if (estimatorNote) {
+      estimatorNote.textContent = error.message;
+    }
+  } finally {
+    if (estimatorSubmit) {
+      estimatorSubmit.disabled = false;
+    }
+  }
+});
+
 window.addEventListener("scroll", () => {
   header?.classList.toggle("scrolled", window.scrollY > 12);
 });
 
 const revealSelectors = [
   ".hero-copy",
+  ".hero-estimator",
+  ".booking-page-copy",
   ".services-hero-copy",
   ".services-hero-card",
   ".single-service-copy",
@@ -131,6 +508,12 @@ const revealSelectors = [
   ".quote-grid > *",
   ".contact-copy",
   ".contact-form",
+  ".gallery-hero-copy",
+  ".gallery-feature-card",
+  ".gallery-page-heading",
+  ".gallery-filter-bar button",
+  ".gallery-tile",
+  ".gallery-cta-grid > *",
   ".footer-grid > div"
 ].join(", ");
 
@@ -151,15 +534,15 @@ revealItems.forEach((item) => {
   item.classList.add("reveal");
   item.style.setProperty("--reveal-delay", `${delay}ms`);
 
-  if (item.matches(".gallery-board article, .quote-grid img, .service-detail-card, .service-quick-card, .service-photo-panel")) {
+  if (item.matches(".gallery-board article, .gallery-tile, .quote-grid img, .service-detail-card, .service-quick-card, .service-photo-panel")) {
     item.classList.add("reveal-graphic");
   }
 
-  if (item.matches(".gallery-copy, .contact-copy, .services-hero-copy, .single-service-copy, .service-story, .service-step-copy")) {
+  if (item.matches(".gallery-copy, .gallery-hero-copy, .gallery-page-heading, .contact-copy, .services-hero-copy, .single-service-copy, .service-story, .service-step-copy")) {
     item.classList.add("reveal-soft-left");
   }
 
-  if (item.matches(".contact-form, .services-hero-card, .service-quick-card, .service-points")) {
+  if (item.matches(".contact-form, .gallery-feature-card, .services-hero-card, .service-quick-card, .service-points")) {
     item.classList.add("reveal-soft-right");
   }
 });
@@ -281,12 +664,11 @@ const updateBookingButton = () => {
   bookingSubmit.disabled = !(requiredFieldsComplete && contactFieldsValid && hasTimeSlot);
 };
 
-renderDates();
-updateAddressFields();
-renderTimes();
-loadSurveyAvailability();
-
 if (surveyForm) {
+  renderDates();
+  updateAddressFields();
+  renderTimes();
+  loadSurveyAvailability();
   availabilityRefreshTimer = window.setInterval(loadSurveyAvailability, 60000);
 
   window.addEventListener("focus", loadSurveyAvailability);
@@ -438,3 +820,134 @@ contactForm?.addEventListener("submit", (event) => {
   formNote.textContent = "Thanks - this demo form is ready for a real enquiry endpoint when we build the next version.";
   contactForm.reset();
 });
+
+let activeGalleryFilter = "all";
+let currentGalleryItem = 0;
+
+const getVisibleGalleryItems = () => galleryItems
+  .filter((item) => !item.classList.contains("is-hidden"));
+
+const updateGalleryLightbox = (item) => {
+  if (!galleryLightbox || !galleryLightboxImage || !galleryLightboxTitle || !galleryLightboxCount || !item) return;
+
+  const image = item.querySelector("img");
+  const visibleItems = getVisibleGalleryItems();
+  const visiblePosition = visibleItems.indexOf(item);
+
+  galleryLightboxImage.src = image?.src || "";
+  galleryLightboxImage.alt = image?.alt || item.dataset.title || "iMove gallery image";
+  galleryLightboxTitle.textContent = item.dataset.title || image?.alt || "iMove gallery";
+  galleryLightboxCount.textContent = `${visiblePosition + 1} of ${visibleItems.length}`;
+};
+
+const openGalleryLightbox = (item) => {
+  if (!galleryLightbox || !item) return;
+
+  const visibleItems = getVisibleGalleryItems();
+  currentGalleryItem = Math.max(visibleItems.indexOf(item), 0);
+  updateGalleryLightbox(visibleItems[currentGalleryItem]);
+  galleryLightbox.hidden = false;
+  document.body.classList.add("lightbox-open");
+};
+
+const closeGalleryLightbox = () => {
+  if (!galleryLightbox) return;
+
+  galleryLightbox.hidden = true;
+  document.body.classList.remove("lightbox-open");
+};
+
+const moveGalleryLightbox = (direction) => {
+  const visibleItems = getVisibleGalleryItems();
+  if (!visibleItems.length || galleryLightbox?.hidden) return;
+
+  currentGalleryItem = (currentGalleryItem + direction + visibleItems.length) % visibleItems.length;
+  updateGalleryLightbox(visibleItems[currentGalleryItem]);
+};
+
+const applyGalleryFilter = (filter) => {
+  activeGalleryFilter = filter;
+
+  galleryFilterButtons.forEach((button) => {
+    const isActive = button.dataset.galleryFilter === filter;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  galleryItems.forEach((item) => {
+    const shouldShow = filter === "all" || item.dataset.category === filter;
+    item.classList.toggle("is-hidden", !shouldShow);
+  });
+};
+
+const bindGalleryItems = () => {
+  galleryItems.forEach((item) => {
+    if (item.dataset.galleryBound === "true") return;
+
+    item.dataset.galleryBound = "true";
+    item.addEventListener("click", () => openGalleryLightbox(item));
+    item.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openGalleryLightbox(item);
+      }
+    });
+    item.setAttribute("tabindex", "0");
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-label", `Open gallery image: ${item.dataset.title || "iMove photo"}`);
+  });
+};
+
+galleryFilterButtons.forEach((button) => {
+  button.setAttribute("aria-pressed", String(button.classList.contains("active")));
+  button.addEventListener("click", () => applyGalleryFilter(button.dataset.galleryFilter || "all"));
+});
+
+galleryClose?.addEventListener("click", closeGalleryLightbox);
+galleryPrev?.addEventListener("click", () => moveGalleryLightbox(-1));
+galleryNext?.addEventListener("click", () => moveGalleryLightbox(1));
+
+galleryLightbox?.addEventListener("click", (event) => {
+  if (event.target === galleryLightbox) {
+    closeGalleryLightbox();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (!galleryLightbox || galleryLightbox.hidden) return;
+
+  if (event.key === "Escape") {
+    closeGalleryLightbox();
+  }
+
+  if (event.key === "ArrowLeft") {
+    moveGalleryLightbox(-1);
+  }
+
+  if (event.key === "ArrowRight") {
+    moveGalleryLightbox(1);
+  }
+});
+
+const loadPublicSettings = async () => {
+  if (!estimator && !document.querySelector("[data-gallery-grid]")) {
+    bindGalleryItems();
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/site-settings");
+    if (!response.ok) return;
+
+    const settings = await response.json();
+    renderEstimatorOptions(settings);
+    renderGalleryOptions(settings);
+    applyGalleryFilter(activeGalleryFilter);
+  } catch (error) {
+    // Public pages keep their built-in fallback settings if the JSON file is not available.
+  } finally {
+    bindGalleryItems();
+  }
+};
+
+loadPublicSettings();

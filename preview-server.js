@@ -5,11 +5,16 @@ const path = require("path");
 const root = process.cwd();
 const port = Number(process.env.PORT || 8080);
 const host = process.env.HOST || "0.0.0.0";
+const settingsPath = path.join(root, "data", "site-settings.json");
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8"
+  ".json": "application/json; charset=utf-8",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp"
 };
 
 loadEnvFile();
@@ -31,7 +36,14 @@ const settings = {
   physicalDurationMinutes: Number(process.env.PHYSICAL_SURVEY_DURATION_MINUTES || 60)
 };
 
+const emailSettings = {
+  resendApiKey: process.env.RESEND_API_KEY || "",
+  from: process.env.ESTIMATE_REQUEST_FROM || "iMove Website <onboarding@resend.dev>",
+  to: process.env.ESTIMATE_REQUEST_TO || process.env.CONTACT_EMAIL || "info@myimove.co.uk"
+};
+
 const mockBookings = [];
+const mockEstimateRequests = [];
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -50,6 +62,38 @@ const server = http.createServer(async (req, res) => {
       const booking = await readJson(req);
       const result = await createSurveyBooking(booking);
       sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/estimate-requests" && req.method === "POST") {
+      const request = await readJson(req);
+      const result = await createEstimateRequest(request);
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/site-settings" && req.method === "GET") {
+      sendJson(res, 200, await readSiteSettings());
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/admin/site-settings" && req.method === "GET") {
+      if (!requireAdmin(req, res)) return;
+      sendJson(res, 200, await readSiteSettings());
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/admin/site-settings" && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
+      const nextSettings = await readJson(req);
+      const result = await saveSiteSettings(nextSettings);
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if ((requestUrl.pathname === "/admin" || requestUrl.pathname === "/admin.html") && req.method === "GET") {
+      if (!requireAdmin(req, res)) return;
+      serveStatic(requestUrl.pathname, res);
       return;
     }
 
@@ -72,7 +116,7 @@ server.listen(port, host, () => {
 });
 
 function serveStatic(urlPath, res) {
-  const requested = urlPath === "/" ? "index.html" : decodeURIComponent(urlPath).slice(1);
+  const requested = urlPath === "/" ? "index.html" : urlPath === "/admin" ? "admin.html" : decodeURIComponent(urlPath).slice(1);
   const filePath = path.resolve(root, requested);
 
   if (!filePath.startsWith(root)) {
@@ -93,6 +137,78 @@ function serveStatic(urlPath, res) {
     });
     res.end(data);
   });
+}
+
+async function readSiteSettings() {
+  const data = await fs.promises.readFile(settingsPath, "utf8");
+  return JSON.parse(data);
+}
+
+async function saveSiteSettings(nextSettings) {
+  const validation = validateSiteSettings(nextSettings);
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  await fs.promises.mkdir(path.dirname(settingsPath), { recursive: true });
+  await fs.promises.writeFile(settingsPath, `${JSON.stringify(nextSettings, null, 2)}\n`);
+
+  return {
+    ok: true,
+    message: "Settings saved. Refresh the public pages to see the update."
+  };
+}
+
+function validateSiteSettings(nextSettings) {
+  if (!nextSettings || typeof nextSettings !== "object") {
+    return { ok: false, message: "Settings payload is missing." };
+  }
+
+  const estimator = nextSettings.estimator || {};
+
+  for (const key of ["properties", "furnished", "extras", "distances"]) {
+    if (!Array.isArray(estimator[key]) || !estimator[key].length) {
+      return { ok: false, message: `Estimator ${key} must contain at least one item.` };
+    }
+  }
+
+  if (!Array.isArray(nextSettings.gallery)) {
+    return { ok: false, message: "Gallery settings must be a list." };
+  }
+
+  return { ok: true };
+}
+
+function requireAdmin(req, res) {
+  const username = process.env.ADMIN_USERNAME || "admin";
+  const password = process.env.ADMIN_PASSWORD || "";
+
+  if (!password) {
+    sendJson(res, 403, {
+      ok: false,
+      message: "Admin password is not configured. Add ADMIN_PASSWORD to your .env or Railway variables."
+    });
+    return false;
+  }
+
+  const authHeader = req.headers.authorization || "";
+  const encoded = authHeader.startsWith("Basic ") ? authHeader.slice(6) : "";
+  const decoded = Buffer.from(encoded, "base64").toString("utf8");
+  const separator = decoded.indexOf(":");
+  const sentUsername = separator >= 0 ? decoded.slice(0, separator) : "";
+  const sentPassword = separator >= 0 ? decoded.slice(separator + 1) : "";
+
+  if (sentUsername === username && sentPassword === password) {
+    return true;
+  }
+
+  res.writeHead(401, {
+    "Content-Type": "text/plain; charset=utf-8",
+    "WWW-Authenticate": "Basic realm=\"iMove Admin\""
+  });
+  res.end("Admin login required");
+  return false;
 }
 
 async function createSurveyBooking(booking) {
@@ -131,6 +247,100 @@ async function createSurveyBooking(booking) {
     ok: true,
     message: "Demo booking saved locally. Add Google Calendar credentials to make this a real calendar booking."
   };
+}
+
+async function createEstimateRequest(request) {
+  const validation = validateEstimateRequest(request);
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  mockEstimateRequests.push({
+    created_at: new Date().toISOString(),
+    request
+  });
+
+  if (emailSettings.resendApiKey) {
+    await sendEstimateRequestEmail(request);
+  }
+
+  return {
+    ok: true,
+    emailSent: Boolean(emailSettings.resendApiKey),
+    message: "Thank you, your request has been received and a member of staff will contact you very soon."
+  };
+}
+
+function validateEstimateRequest(request) {
+  const customer = request.customer || {};
+  const required = ["name", "phone", "email"];
+  const missing = required.filter((key) => !String(customer[key] || "").trim());
+
+  if (missing.length) {
+    return {
+      ok: false,
+      message: "Please enter your name, contact number, and email address."
+    };
+  }
+
+  if (!String(customer.email).includes("@")) {
+    return {
+      ok: false,
+      message: "Please enter a valid email address."
+    };
+  }
+
+  if (!request.estimate || !request.property || !request.furnished || !request.distance) {
+    return {
+      ok: false,
+      message: "Please complete the estimator before sending your request."
+    };
+  }
+
+  return { ok: true };
+}
+
+async function sendEstimateRequestEmail(request) {
+  const customer = request.customer || {};
+  const estimate = request.estimate || {};
+  const extras = Array.isArray(request.extras) && request.extras.length ? request.extras.join(", ") : "None selected";
+  const subject = `iMove estimator enquiry - ${customer.name}`;
+  const text = [
+    "New estimator enquiry from the iMove website.",
+    "",
+    `Name: ${customer.name}`,
+    `Phone: ${customer.phone}`,
+    `Email: ${customer.email}`,
+    `Message: ${customer.message || "No message provided"}`,
+    "",
+    `Estimate: £${estimate.low} - £${estimate.high}`,
+    `Volume: ~${estimate.volume} cu ft`,
+    `Property: ${request.property.label}`,
+    `Furnished: ${request.furnished.label}`,
+    `Distance: ${request.distance.label}`,
+    `Extras: ${extras}`,
+    "",
+    "Source: iMove website estimator"
+  ].join("\n");
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${emailSettings.resendApiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: emailSettings.from,
+      to: [emailSettings.to],
+      subject,
+      text
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Estimator email failed: ${response.status}`);
+  }
 }
 
 function validateBooking(booking) {

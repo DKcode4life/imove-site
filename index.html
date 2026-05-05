@@ -25,14 +25,15 @@
       <nav class="primary-nav" data-nav>
         <a href="#top">Home</a>
         <a href="services.html">Services</a>
-        <a href="#gallery">Gallery</a>
+        <a href="gallery.html">Gallery</a>
         <a href="#steps">Planning</a>
         <a href="#contact">Contact</a>
+        <a class="mobile-survey-link" href="book-survey.html">Book a Survey</a>
       </nav>
 
       <div class="header-actions">
         <a class="text-link" href="tel:01638255255">01638 255 255</a>
-        <a class="btn btn-small btn-green" href="https://wa.me/441638255255">WhatsApp</a>
+        <a class="btn btn-small btn-green" href="https://wa.me/441638255255">WhatsApp</a><a class="btn btn-small btn-primary header-survey-btn" href="book-survey.html">Book a Survey</a>
       </div>
     </header>
 
@@ -56,73 +57,164 @@
             </div>
           </div>
 
-          <aside class="hero-booking" aria-labelledby="hero-booking-title">
-            <div class="booking-card-header">
-              <p class="eyebrow">Instant survey booking</p>
-              <h2 id="hero-booking-title">Book your survey</h2>
-              <p>Choose a video survey or a physical home visit from the available appointment slots.</p>
+          <aside class="hero-estimator move-estimator" aria-labelledby="hero-estimator-title" data-estimator>
+            <p class="estimator-privacy">We will not ask for your contact details unless <strong>you</strong> choose to continue.</p>
+
+            <div class="estimator-progress" aria-label="Estimate progress">
+              <div class="active" data-progress-step="1"><span>1</span><strong>Property</strong></div>
+              <div data-progress-step="2"><span>2</span><strong>Distance</strong></div>
+              <div data-progress-step="3"><span>3</span><strong>Estimate</strong></div>
             </div>
 
-            <form class="survey-form" data-survey-form>
-              <fieldset class="survey-choice">
-                <legend>Survey type</legend>
-                <label>
-                  <input type="radio" name="survey_type" value="Video survey" checked>
-                  <span>
-                    <strong>Video survey</strong>
-                    <small>Fast, simple Zoom-style call</small>
-                  </span>
-                </label>
-                <label>
-                  <input type="radio" name="survey_type" value="Physical survey">
-                  <span>
-                    <strong>Physical survey</strong>
-                    <small>In-person home visit</small>
-                  </span>
-                </label>
-              </fieldset>
-
-              <p class="mobile-booking-hint">Choose your survey type to see available dates and times.</p>
-
-              <div class="booking-details" data-booking-details>
-                <label class="form-field">
-                  <span>Select a date</span>
-                  <select name="survey_date" data-survey-date required></select>
-                </label>
-
-                <div class="time-picker">
-                  <span>Available times</span>
-                  <div class="time-slots" data-time-slots role="radiogroup" aria-label="Available appointment times"></div>
-                  <input type="hidden" name="appointment_time" data-appointment-time required>
+            <div class="estimator-stage" data-estimator-stage>
+              <section class="estimator-step active" data-estimator-step="1" aria-labelledby="hero-estimator-title">
+                <div class="estimator-card-header">
+                  <span class="estimator-icon" aria-hidden="true">🏠</span>
+                  <h2 class="estimator-main-title" id="hero-estimator-title">Instant Move Estimator</h2>
+                  <p class="estimator-subtitle">Tell us about your property</p>
+                  <p>Just a few clicks so we can estimate the job size.</p>
                 </div>
 
-                <div class="booking-fields">
-                  <label class="form-field">
+                <div class="estimate-group">
+                  <h3>What type of property?</h3>
+                  <div class="estimate-option-grid property-grid">
+                    <button type="button" data-estimator-option="property" data-label="Studio" data-volume="300" data-price="390">Studio</button>
+                    <button type="button" data-estimator-option="property" data-label="1 Bed Flat" data-volume="450" data-price="480">1 Bed Flat</button>
+                    <button type="button" data-estimator-option="property" data-label="2 Bed Flat" data-volume="650" data-price="590">2 Bed Flat</button>
+                    <button type="button" data-estimator-option="property" data-label="3 Bed Flat" data-volume="800" data-price="690">3 Bed Flat</button>
+                    <button type="button" data-estimator-option="property" data-label="2 Bed House" data-volume="750" data-price="670">2 Bed House</button>
+                    <button type="button" data-estimator-option="property" data-label="3 Bed House" data-volume="920" data-price="670">3 Bed House</button>
+                    <button type="button" data-estimator-option="property" data-label="4 Bed House" data-volume="1250" data-price="960">4 Bed House</button>
+                    <button type="button" data-estimator-option="property" data-label="5+ Bed House" data-volume="1600" data-price="1250">5+ Bed House</button>
+                  </div>
+                </div>
+
+                <div class="estimate-group estimate-reveal" data-estimator-reveal>
+                  <h3>How furnished is it?</h3>
+                  <div class="estimate-option-grid furnished-grid">
+                    <button type="button" data-estimator-option="furnished" data-label="Lightly" data-multiplier="0.9"><strong>Lightly</strong><small>Few items, mostly packed</small></button>
+                    <button type="button" data-estimator-option="furnished" data-label="Average" data-multiplier="1"><strong>Average</strong><small>Typical household</small></button>
+                    <button type="button" data-estimator-option="furnished" data-label="Heavily" data-multiplier="1.18"><strong>Heavily</strong><small>Lots of furniture and items</small></button>
+                  </div>
+                </div>
+
+                <div class="estimate-group estimate-reveal" data-estimator-reveal>
+                  <h3>Any extras? <span>(select all that apply)</span></h3>
+                  <div class="estimate-option-grid extras-grid">
+                    <button type="button" data-estimator-extra="Garden" data-price="60" data-volume="60">Garden</button>
+                    <button type="button" data-estimator-extra="Shed" data-price="80" data-volume="80">Shed</button>
+                    <button type="button" data-estimator-extra="Garage" data-price="110" data-volume="120">Garage</button>
+                    <button type="button" data-estimator-extra="Loft" data-price="90" data-volume="100">Loft</button>
+                  </div>
+                </div>
+
+                <div class="estimate-reveal" data-estimator-reveal>
+                  <button class="btn btn-primary estimate-next" type="button" data-estimator-next disabled>Next</button>
+                </div>
+              </section>
+
+              <section class="estimator-step" data-estimator-step="2" aria-labelledby="estimator-distance-title">
+                <div class="estimator-card-header">
+                  <span class="estimator-icon" aria-hidden="true">➤</span>
+                  <p class="eyebrow">Move distance</p>
+                  <h2 id="estimator-distance-title">How far away is your new home?</h2>
+                  <p>Pick a rough distance for now. It does not have to be exact.</p>
+                </div>
+
+                <div class="estimate-option-grid distance-grid">
+                  <button type="button" data-estimator-option="distance" data-label="Up to 10 miles" data-distance="10" data-price="0"><strong>Up to 10 miles</strong><small>Local move</small></button>
+                  <button type="button" data-estimator-option="distance" data-label="11 - 30 miles" data-distance="20" data-price="120"><strong>11 - 30 miles</strong><small>Nearby</small></button>
+                  <button type="button" data-estimator-option="distance" data-label="31 - 60 miles" data-distance="45" data-price="260"><strong>31 - 60 miles</strong><small>Regional</small></button>
+                  <button type="button" data-estimator-option="distance" data-label="61 - 100 miles" data-distance="80" data-price="450"><strong>61 - 100 miles</strong><small>Cross-country</small></button>
+                  <button type="button" data-estimator-option="distance" data-label="101 - 200 miles" data-distance="150" data-price="750"><strong>101 - 200 miles</strong><small>Long distance</small></button>
+                  <button type="button" data-estimator-option="distance" data-label="200+ miles" data-distance="220" data-price="1100"><strong>200+ miles</strong><small>Long-haul move</small></button>
+                </div>
+
+                <div class="postcode-divider"><span>Know your postcodes? Even better</span></div>
+                <div class="postcode-fields">
+                  <label>
+                    <span>Moving from</span>
+                    <input type="text" data-estimator-from placeholder="e.g. Mildenhall or IP28">
+                  </label>
+                  <label>
+                    <span>Moving to</span>
+                    <input type="text" data-estimator-to placeholder="e.g. London or SW1A">
+                  </label>
+                </div>
+
+                <div class="estimator-nav">
+                  <button class="btn btn-outline-dark" type="button" data-estimator-back>Back</button>
+                  <button class="btn btn-primary" type="button" data-estimator-next disabled>Get My Estimate</button>
+                </div>
+              </section>
+
+              <section class="estimator-step" data-estimator-step="3" aria-labelledby="estimator-result-title">
+                <div class="estimator-card-header result-header">
+                  <span class="price-icon" aria-hidden="true">&pound;</span>
+                  <p class="eyebrow">Instant estimate</p>
+                  <h2 id="estimator-result-title">Your estimated price</h2>
+                  <p>Based on the details you have provided.</p>
+                </div>
+
+                <div class="estimate-result">
+                  <strong data-estimator-price>&pound;0 - &pound;0</strong>
+                  <span>Estimated removal cost</span>
+                  <small data-estimator-volume>Based on your selected property size</small>
+                </div>
+
+                <div class="estimate-summary" data-estimator-summary></div>
+                <p class="estimate-disclaimer">This is an estimate based on average volumes. A proper survey will give you an accurate fixed price.</p>
+
+                <div class="estimator-nav stacked">
+                  <button class="btn btn-primary" type="button" data-estimator-next>Like this estimate? Get in touch</button>
+                  <a class="btn btn-secondary" href="book-survey.html">I'm ready to book a house survey</a>
+                  <button class="btn btn-outline-dark" type="button" data-estimator-adjust>Adjust details</button>
+                </div>
+              </section>
+
+              <section class="estimator-step" data-estimator-step="4" aria-labelledby="estimator-contact-title">
+                <div class="estimator-card-header result-header">
+                  <span class="estimator-icon" aria-hidden="true">✉️</span>
+                  <p class="eyebrow">Estimator enquiry</p>
+                  <h2 id="estimator-contact-title">Send your estimate request</h2>
+                  <p>We will send this to the iMove team as an estimator enquiry.</p>
+                </div>
+
+                <div class="estimate-review" data-estimator-review></div>
+
+                <form class="estimator-contact-form" data-estimator-contact-form>
+                  <label>
                     <span>Name</span>
                     <input type="text" name="name" placeholder="Your name" required>
                   </label>
-                  <label class="form-field">
-                    <span>Phone</span>
+                  <label>
+                    <span>Contact number</span>
                     <input type="tel" name="phone" placeholder="Phone number" required>
                   </label>
-                  <label class="form-field">
-                    <span>Email</span>
+                  <label>
+                    <span>Email address</span>
                     <input type="email" name="email" placeholder="Email address" required>
                   </label>
-                </div>
-
-                <fieldset class="address-fields" data-address-fields hidden>
-                  <legend>Survey address</legend>
-                  <label class="form-field">
-                    <span>Full address</span>
-                    <input type="text" name="address" placeholder="House number, street, town, postcode" data-address-required>
+                  <label>
+                    <span>Message</span>
+                    <textarea name="message" rows="4" placeholder="Anything useful about access, dates, packing, or storage"></textarea>
                   </label>
-                </fieldset>
 
-                <button class="btn btn-primary" type="submit" data-booking-submit disabled>Book survey</button>
-                <p class="booking-note" data-survey-note aria-live="polite">Availability is shown for the next bookable survey dates.</p>
-              </div>
-            </form>
+                  <div class="estimator-nav">
+                    <button class="btn btn-outline-dark" type="button" data-estimator-back>Back</button>
+                    <button class="btn btn-primary" type="submit" data-estimator-submit>Send request</button>
+                  </div>
+                  <p class="booking-note" data-estimator-note aria-live="polite"></p>
+                </form>
+
+              </section>
+            </div>
+
+            <div class="estimator-success" data-estimator-success hidden>
+              <span aria-hidden="true">&check;</span>
+              <h3>Request received</h3>
+              <p>Thank you, your request has been received and a member of staff will contact you very soon.</p>
+            </div>
           </aside>
         </div>
       </section>
@@ -333,7 +425,8 @@
         <div>
           <h3>Company info</h3>
           <a href="services.html">Services</a>
-          <a href="#gallery">Gallery</a>
+          <a href="book-survey.html">Book a Survey</a>
+          <a href="gallery.html">Gallery</a>
           <a href="#contact">Contact</a>
           <a href="#contact">Get a quote</a>
         </div>
@@ -349,6 +442,6 @@
       </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=20260505-3"></script>
   </body>
 </html>

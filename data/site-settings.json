@@ -1,0 +1,379 @@
+{
+  "estimator": {
+    "highEstimateMinimum": 190,
+    "highEstimatePercent": 0.26,
+    "properties": [
+      {
+        "label": "Studio",
+        "volume": 300,
+        "price": 390
+      },
+      {
+        "label": "1 Bed Flat",
+        "volume": 450,
+        "price": 480
+      },
+      {
+        "label": "2 Bed Flat",
+        "volume": 650,
+        "price": 590
+      },
+      {
+        "label": "3 Bed Flat",
+        "volume": 800,
+        "price": 690
+      },
+      {
+        "label": "2 Bed House",
+        "volume": 750,
+        "price": 670
+      },
+      {
+        "label": "3 Bed House",
+        "volume": 920,
+        "price": 670
+      },
+      {
+        "label": "4 Bed House",
+        "volume": 1250,
+        "price": 960
+      },
+      {
+        "label": "5+ Bed House",
+        "volume": 1600,
+        "price": 1250
+      }
+    ],
+    "furnished": [
+      {
+        "label": "Lightly",
+        "description": "Few items, mostly packed",
+        "multiplier": 0.9
+      },
+      {
+        "label": "Average",
+        "description": "Typical household",
+        "multiplier": 1
+      },
+      {
+        "label": "Heavily",
+        "description": "Lots of furniture and items",
+        "multiplier": 1.18
+      }
+    ],
+    "extras": [
+      {
+        "label": "Garden",
+        "price": 60,
+        "volume": 60
+      },
+      {
+        "label": "Shed",
+        "price": 80,
+        "volume": 80
+      },
+      {
+        "label": "Garage",
+        "price": 110,
+        "volume": 120
+      },
+      {
+        "label": "Loft",
+        "price": 90,
+        "volume": 100
+      }
+    ],
+    "distances": [
+      {
+        "label": "Up to 10 miles",
+        "description": "Local move",
+        "distance": 10,
+        "price": 0
+      },
+      {
+        "label": "11 - 30 miles",
+        "description": "Nearby",
+        "distance": 20,
+        "price": 120
+      },
+      {
+        "label": "31 - 60 miles",
+        "description": "Regional",
+        "distance": 45,
+        "price": 260
+      },
+      {
+        "label": "61 - 100 miles",
+        "description": "Cross-country",
+        "distance": 80,
+        "price": 450
+      },
+      {
+        "label": "101 - 200 miles",
+        "description": "Long distance",
+        "distance": 150,
+        "price": 750
+      },
+      {
+        "label": "200+ miles",
+        "description": "Long-haul move",
+        "distance": 220,
+        "price": 1100
+      }
+    ]
+  },
+  "gallery": [
+    {
+      "title": "Local move during a lovely day",
+      "category": "moves",
+      "image": "assets/gallery/1.jpeg",
+      "alt": "Local move during a lovely day",
+      "layout": "tall"
+    },
+    {
+      "title": "Container loaded and secured to be shipped to USA",
+      "category": "packing",
+      "image": "assets/gallery/2.jpeg",
+      "alt": "Container loaded and secured to be shipped to USA",
+      "layout": "wide"
+    },
+    {
+      "title": "+GBP200k painting being prepared for custom crating",
+      "category": "packing",
+      "image": "assets/gallery/3.jpeg",
+      "alt": "+GBP200k painting being prepared for custom crating",
+      "layout": "normal"
+    },
+    {
+      "title": "Art of fragile packing",
+      "category": "packing",
+      "image": "assets/gallery/4.jpeg",
+      "alt": "Art of fragile packing",
+      "layout": "normal"
+    },
+    {
+      "title": "Moving from GBP17m mansion",
+      "category": "moves",
+      "image": "assets/gallery/5.jpeg",
+      "alt": "Moving from GBP17m mansion",
+      "layout": "tall"
+    },
+    {
+      "title": "Our Mildenhall storage warehouse",
+      "category": "storage",
+      "image": "assets/gallery/6.jpeg",
+      "alt": "Our Mildenhall storage warehouse",
+      "layout": "normal"
+    },
+    {
+      "title": "Magnificent GBP17m mansion",
+      "category": "moves",
+      "image": "assets/gallery/7.jpeg",
+      "alt": "Magnificent GBP17m mansion",
+      "layout": "wide"
+    },
+    {
+      "title": "Custom full size pool table delivered from Spain",
+      "category": "specialist",
+      "image": "assets/gallery/8.jpeg",
+      "alt": "Custom full size pool table delivered from Spain",
+      "layout": "normal"
+    },
+    {
+      "title": "Van ready for tomorrow's move",
+      "category": "moves",
+      "image": "assets/gallery/9.jpeg",
+      "alt": "Van ready for tomorrow's move",
+      "layout": "normal"
+    },
+    {
+      "title": "Local move from rented to purchased property",
+      "category": "moves",
+      "image": "assets/gallery/10.jpeg",
+      "alt": "Local move from rented to purchased property",
+      "layout": "tall"
+    },
+    {
+      "title": "7 seater Jacuzzi delivery via neighbour's garden",
+      "category": "specialist",
+      "image": "assets/gallery/11.jpeg",
+      "alt": "7 seater Jacuzzi delivery via neighbour's garden",
+      "layout": "normal"
+    },
+    {
+      "title": "1970 Land Rover loaded and ready for delivery tomorrow",
+      "category": "vehicles",
+      "image": "assets/gallery/12.jpeg",
+      "alt": "1970 Land Rover loaded and ready for delivery tomorrow",
+      "layout": "wide"
+    },
+    {
+      "title": "Large glass table top wrapped for secure move",
+      "category": "packing",
+      "image": "assets/gallery/13.jpeg",
+      "alt": "Large glass table top wrapped for secure move",
+      "layout": "normal"
+    },
+    {
+      "title": "Beautiful Porsche being transported for inspection",
+      "category": "vehicles",
+      "image": "assets/gallery/14.jpeg",
+      "alt": "Beautiful Porsche being transported for inspection",
+      "layout": "normal"
+    },
+    {
+      "title": "Move from this beautiful house to storage",
+      "category": "storage",
+      "image": "assets/gallery/15.jpeg",
+      "alt": "Move from this beautiful house to storage",
+      "layout": "tall"
+    },
+    {
+      "title": "Lovely bit of stacking by iMove crew",
+      "category": "moves",
+      "image": "assets/gallery/16.jpeg",
+      "alt": "Lovely bit of stacking by iMove crew",
+      "layout": "normal"
+    },
+    {
+      "title": "Custom 12 drawer glass console dismantled and moved securely",
+      "category": "specialist",
+      "image": "assets/gallery/17.jpeg",
+      "alt": "Custom 12 drawer glass console dismantled and moved securely",
+      "layout": "wide"
+    },
+    {
+      "title": "Upright piano did not fit in the lift, so it was carried up the stairs",
+      "category": "specialist",
+      "image": "assets/gallery/18.jpeg",
+      "alt": "Upright piano did not fit in the lift, so it was carried up the stairs",
+      "layout": "normal"
+    },
+    {
+      "title": "Largest dining table we have ever seen, dismantled and moved",
+      "category": "specialist",
+      "image": "assets/gallery/19.jpeg",
+      "alt": "Largest dining table we have ever seen, dismantled and moved",
+      "layout": "normal"
+    },
+    {
+      "title": "Client's pride and joy with extra protection for his bike",
+      "category": "vehicles",
+      "image": "assets/gallery/20.jpeg",
+      "alt": "Client's pride and joy with extra protection for his bike",
+      "layout": "tall"
+    },
+    {
+      "title": "Premium export packing for shipment to Singapore",
+      "category": "packing",
+      "image": "assets/gallery/21.jpeg",
+      "alt": "Premium export packing for shipment to Singapore",
+      "layout": "normal"
+    },
+    {
+      "title": "Small delivery to our storage facility",
+      "category": "storage",
+      "image": "assets/gallery/22.jpeg",
+      "alt": "Small delivery to our storage facility",
+      "layout": "wide"
+    },
+    {
+      "title": "Custom office cabinet wrapped for overseas shipment",
+      "category": "packing",
+      "image": "assets/gallery/23.jpeg",
+      "alt": "Custom office cabinet wrapped for overseas shipment",
+      "layout": "normal"
+    },
+    {
+      "title": "People carrier buggy transported to its new home",
+      "category": "vehicles",
+      "image": "assets/gallery/24.jpeg",
+      "alt": "People carrier buggy transported to its new home",
+      "layout": "normal"
+    },
+    {
+      "title": "Large premium cabinets dismantled ready for export packing",
+      "category": "packing",
+      "image": "assets/gallery/25.jpeg",
+      "alt": "Large premium cabinets dismantled ready for export packing",
+      "layout": "tall"
+    },
+    {
+      "title": "DIY moving pack for our van rental clients to rent",
+      "category": "packing",
+      "image": "assets/gallery/26.jpeg",
+      "alt": "DIY moving pack for our van rental clients to rent",
+      "layout": "normal"
+    },
+    {
+      "title": "Nice upgrade to our van for dark winter evenings",
+      "category": "moves",
+      "image": "assets/gallery/27.jpeg",
+      "alt": "Nice upgrade to our van for dark winter evenings",
+      "layout": "wide"
+    },
+    {
+      "title": "Red protection runners for our clients' lovely homes",
+      "category": "moves",
+      "image": "assets/gallery/28.jpeg",
+      "alt": "Red protection runners for our clients' lovely homes",
+      "layout": "normal"
+    },
+    {
+      "title": "Sofa did not fit upstairs, so a furniture lift came to the rescue",
+      "category": "specialist",
+      "image": "assets/gallery/29.jpeg",
+      "alt": "Sofa did not fit upstairs, so a furniture lift came to the rescue",
+      "layout": "normal"
+    },
+    {
+      "title": "Local move from the famous Watermill house",
+      "category": "moves",
+      "image": "assets/gallery/30.jpeg",
+      "alt": "Local move from the famous Watermill house",
+      "layout": "tall"
+    },
+    {
+      "title": "Full size grand piano getting ready to be moved",
+      "category": "specialist",
+      "image": "assets/gallery/31.jpeg",
+      "alt": "Full size grand piano getting ready to be moved",
+      "layout": "normal"
+    },
+    {
+      "title": "Container loaded for the shipment to the USA",
+      "category": "packing",
+      "image": "assets/gallery/32.jpeg",
+      "alt": "Container loaded for the shipment to the USA",
+      "layout": "wide"
+    },
+    {
+      "title": "Big storage warehouse rewrap and organise job",
+      "category": "storage",
+      "image": "assets/gallery/33.jpeg",
+      "alt": "Big storage warehouse rewrap and organise job",
+      "layout": "normal"
+    },
+    {
+      "title": "Sofas covered in quilted bags ready for transportation",
+      "category": "packing",
+      "image": "assets/gallery/34.jpeg",
+      "alt": "Sofas covered in quilted bags ready for transportation",
+      "layout": "normal"
+    },
+    {
+      "title": "Van load nearly finished by our crew member",
+      "category": "moves",
+      "image": "assets/gallery/35.jpeg",
+      "alt": "Van load nearly finished by our crew member",
+      "layout": "tall"
+    },
+    {
+      "title": "7 seater Jacuzzi made it to its spot via neighbour's garden",
+      "category": "specialist",
+      "image": "assets/gallery/36.jpeg",
+      "alt": "7 seater Jacuzzi made it to its spot via neighbour's garden",
+      "layout": "wide"
+    }
+  ]
+}
