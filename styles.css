@@ -1912,6 +1912,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+  min-height: 260px;
 }
 
 .review-card {

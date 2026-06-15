@@ -94,7 +94,7 @@ const fallbackGoogleReviews = [
 
 const renderStars = (rating) => {
   const rounded = Math.max(0, Math.min(5, Math.round(Number(rating || 0))));
-  return `${"★".repeat(rounded)}${"☆".repeat(5 - rounded)}`;
+  return `${"&#9733;".repeat(rounded)}${"&#9734;".repeat(5 - rounded)}`;
 };
 
 const googleLogoSvg = `
@@ -114,11 +114,11 @@ const renderGoogleReviews = (reviews) => {
     const stars = renderStars(rating);
 
     return `
-      <figure class="review-card reveal visible">
+      <figure class="review-card reveal in-view">
         <div class="review-card-head">
           <div>
             <figcaption>${escapeHtml(review.authorName || "Google reviewer")}</figcaption>
-            <span class="review-source">Google review${review.relativeTime ? ` · ${escapeHtml(review.relativeTime)}` : ""}</span>
+            <span class="review-source">Google review${review.relativeTime ? ` &middot; ${escapeHtml(review.relativeTime)}` : ""}</span>
           </div>
           ${googleLogoSvg}
         </div>
