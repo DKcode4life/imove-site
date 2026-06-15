@@ -365,9 +365,7 @@ async function sendEstimateRequestEmails(request) {
       cardLabel: "Estimated Move Details",
       cardText: `Estimated cost: \u00a3${estimate.low} - \u00a3${estimate.high}<br>Property: ${request.property.label}<br>Distance: ${request.distance.label}`,
       closing: "If we need anything else to provide a clearer quote, one of the team will contact you very soon.",
-      actionText: "In the meantime, if you wish to book a survey, click below.",
-      actionLabel: "Book a house survey here",
-      actionUrl: `${settings.publicSiteUrl}/book-survey.html`
+      ...buildSurveyBookingAction()
     }),
     replyTo: customer.email
   });
@@ -659,7 +657,8 @@ async function sendQuoteRequestEmails(request) {
       intro: "Thank you for sending your move details. We have received your quote request and our team will review everything you submitted.",
       cardLabel: "Move Details",
       cardText: `From: ${request.moving_from}<br>To: ${request.moving_to}<br>Moving date: ${request.move_date}<br>Property: ${request.property_type}, ${request.rooms}`,
-      closing: "If anything needs clarifying, our crew will get in touch with you very soon."
+      closing: "If anything needs clarifying, our crew will get in touch with you very soon.",
+      ...buildSurveyBookingAction()
     }),
     replyTo: request.email
   });
@@ -701,7 +700,8 @@ async function createContactRequest(request) {
       intro: "Thank you for contacting iMove. We have received your enquiry and a member of our team will review your message.",
       cardLabel: "Your Message",
       cardText: request.message,
-      closing: "Our crew will get in touch with you very soon."
+      closing: "Our crew will get in touch with you very soon.",
+      ...buildSurveyBookingAction()
     }),
     replyTo: request.email
   });
@@ -777,7 +777,8 @@ async function sendSurveyBookingEmails(booking) {
       intro: "Thank you for choosing iMove. Your survey booking request has been received and we look forward to helping you with your move.",
       cardLabel: "Survey Appointment",
       cardText: `${booking.survey_type}<br>${booking.survey_date} at ${booking.appointment_time}${booking.address ? `<br>${booking.address}` : ""}`,
-      closing: "If you have any questions or need to rearrange, please do not hesitate to get in touch. We are always happy to help."
+      closing: "If you have any questions or need to rearrange, please do not hesitate to get in touch. We are always happy to help.",
+      ...buildSurveyBookingAction()
     }),
     replyTo: booking.email
   });
@@ -843,6 +844,14 @@ function buildCustomerConfirmationText(name, requestType) {
     "Kind regards,",
     "The iMove team"
   ].join("\n");
+}
+
+function buildSurveyBookingAction() {
+  return {
+    actionText: "In the meantime, if you wish to book a survey, click below.",
+    actionLabel: "Book a house survey here",
+    actionUrl: `${settings.publicSiteUrl}/book-survey.html`
+  };
 }
 
 function buildCustomerConfirmationHtml({ title, name, intro, cardLabel, cardText, closing, actionText, actionLabel, actionUrl }) {
