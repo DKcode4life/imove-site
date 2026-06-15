@@ -755,6 +755,19 @@ function validateContactRequest(request) {
 }
 
 async function sendSurveyBookingEmails(booking) {
+  const isVideoSurvey = booking.survey_type !== "Physical survey";
+  const zoomSurveyUrl = "https://us05web.zoom.us/j/5757163859?pwd=G6GO9aoYEtsukhye4UxaoYasTXD9HL.1";
+  const surveyAction = isVideoSurvey
+    ? {
+        actionText: "Here is your Zoom link for your convenience.",
+        actionLabel: "Join your Zoom video survey",
+        actionUrl: zoomSurveyUrl
+      }
+    : {};
+  const appointmentLabel = isVideoSurvey ? "Zoom Video Survey" : "Survey Appointment";
+  const appointmentText = isVideoSurvey
+    ? `Zoom video survey booked<br>${booking.survey_date} at ${booking.appointment_time}`
+    : `${booking.survey_type}<br>${booking.survey_date} at ${booking.appointment_time}${booking.address ? `<br>${booking.address}` : ""}`;
   const details = [
     "New survey booking from the iMove website.",
     "",
@@ -785,6 +798,7 @@ async function sendSurveyBookingEmails(booking) {
       `Survey type: ${booking.survey_type}`,
       `Date: ${booking.survey_date}`,
       `Time: ${booking.appointment_time}`,
+      isVideoSurvey ? `Zoom link: ${zoomSurveyUrl}` : "",
       "",
       "Our crew will get in touch with you if we need to confirm any details before the appointment.",
       "",
@@ -792,13 +806,13 @@ async function sendSurveyBookingEmails(booking) {
       "The iMove team"
     ].join("\n"),
     customerHtml: buildCustomerConfirmationHtml({
-      title: "Survey Booking Received",
+      title: isVideoSurvey ? "Video Survey Booking Received" : "Survey Booking Received",
       name: booking.name,
       intro: "Thank you for choosing iMove. Your survey booking request has been received and we look forward to helping you with your move.",
-      cardLabel: "Survey Appointment",
-      cardText: `${booking.survey_type}<br>${booking.survey_date} at ${booking.appointment_time}${booking.address ? `<br>${booking.address}` : ""}`,
+      cardLabel: appointmentLabel,
+      cardText: appointmentText,
       closing: "If you have any questions or need to rearrange, please do not hesitate to get in touch. We are always happy to help.",
-      ...buildSurveyBookingAction()
+      ...surveyAction
     }),
     replyTo: booking.email
   });
