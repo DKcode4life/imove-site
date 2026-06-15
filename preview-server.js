@@ -33,7 +33,8 @@ const settings = {
   workdayEnd: process.env.SURVEY_WORKDAY_END || "17:00",
   slotStepMinutes: Number(process.env.SURVEY_SLOT_STEP_MINUTES || 30),
   videoDurationMinutes: Number(process.env.VIDEO_SURVEY_DURATION_MINUTES || 30),
-  physicalDurationMinutes: Number(process.env.PHYSICAL_SURVEY_DURATION_MINUTES || 60)
+  physicalDurationMinutes: Number(process.env.PHYSICAL_SURVEY_DURATION_MINUTES || 60),
+  mapsApiKey: process.env.GOOGLE_MAPS_API_KEY || ""
 };
 
 const emailSettings = {
@@ -77,6 +78,13 @@ const server = http.createServer(async (req, res) => {
     if (requestUrl.pathname === "/api/quote-requests" && req.method === "POST") {
       const request = await readJson(req);
       const result = await createQuoteRequest(request);
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/estimate-distance" && req.method === "POST") {
+      const request = await readJson(req);
+      const result = await estimateMoveDistance(request);
       sendJson(res, result.ok ? 200 : 400, result);
       return;
     }
@@ -415,6 +423,161 @@ function validateQuoteRequest(request) {
   }
 
   return { ok: true };
+}
+
+async function estimateMoveDistance(request) {
+  const from = String(request.from || "").trim();
+  const to = String(request.to || "").trim();
+
+  if (!from || !to) {
+    return {
+      ok: false,
+      message: "Please enter both moving from and moving to locations."
+    };
+  }
+
+  const distance = settings.mapsApiKey
+    ? await getGoogleDrivingDistance(from, to)
+    : getApproximateDistance(from, to);
+
+  if (!distance.ok) {
+    return distance;
+  }
+
+  const tier = await getEstimatorDistanceTier(distance.miles);
+
+  return {
+    ok: true,
+    source: distance.source,
+    from,
+    to,
+    distance: Math.max(1, Math.round(distance.miles)),
+    label: `${tier.label} - calculated from locations`,
+    price: tier.price,
+    tierLabel: tier.label
+  };
+}
+
+async function getGoogleDrivingDistance(from, to) {
+  const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
+  url.searchParams.set("origins", from);
+  url.searchParams.set("destinations", to);
+  url.searchParams.set("mode", "driving");
+  url.searchParams.set("units", "imperial");
+  url.searchParams.set("region", "uk");
+  url.searchParams.set("key", settings.mapsApiKey);
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Google distance lookup failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const element = data.rows?.[0]?.elements?.[0];
+
+  if (data.status !== "OK" || element?.status !== "OK" || !element.distance?.value) {
+    return {
+      ok: false,
+      message: "We could not calculate that distance. Please check the locations or choose a preset mileage."
+    };
+  }
+
+  return {
+    ok: true,
+    source: "google-maps",
+    miles: element.distance.value / 1609.344
+  };
+}
+
+async function getEstimatorDistanceTier(miles) {
+  const siteSettings = await readSiteSettings();
+  const distances = siteSettings.estimator?.distances || [];
+  const thresholds = [10, 30, 60, 100, 200, Infinity];
+  const index = thresholds.findIndex((maxMiles) => miles <= maxMiles);
+
+  return distances[Math.max(index, 0)] || distances[distances.length - 1] || {
+    label: `${Math.round(miles)} miles`,
+    price: 0
+  };
+}
+
+function getApproximateDistance(from, to) {
+  const fromPoint = findKnownLocation(from);
+  const toPoint = findKnownLocation(to);
+
+  if (!fromPoint || !toPoint) {
+    return {
+      ok: false,
+      message: "Exact typed-location distance needs Google Maps connected. Please choose a preset mileage for now."
+    };
+  }
+
+  return {
+    ok: true,
+    source: "built-in-location-estimate",
+    miles: haversineMiles(fromPoint, toPoint) * 1.22
+  };
+}
+
+function findKnownLocation(value) {
+  const normalised = String(value || "").toLowerCase();
+  const postcodeMatch = normalised.match(/\b([a-z]{1,2}\d{1,2}[a-z]?)\s*\d?[a-z]{0,2}\b/i);
+  const outwardCode = postcodeMatch?.[1]?.toLowerCase();
+  const knownLocations = {
+    mildenhall: [52.344, 0.510],
+    "ip28": [52.344, 0.510],
+    cambridge: [52.205, 0.121],
+    "cb1": [52.195, 0.139],
+    "cb2": [52.190, 0.120],
+    "cb3": [52.213, 0.095],
+    "cb4": [52.230, 0.125],
+    london: [51.507, -0.128],
+    "sw1a": [51.501, -0.142],
+    norwich: [52.630, 1.297],
+    "nr1": [52.626, 1.306],
+    ipswich: [52.056, 1.148],
+    "ip1": [52.064, 1.136],
+    bury: [52.246, 0.711],
+    "bury st edmunds": [52.246, 0.711],
+    "ip33": [52.246, 0.711],
+    ely: [52.399, 0.263],
+    "cb7": [52.400, 0.263],
+    newmarket: [52.245, 0.407],
+    "cb8": [52.245, 0.407],
+    thetford: [52.414, 0.751],
+    "ip24": [52.414, 0.751],
+    brandon: [52.448, 0.624],
+    "ip27": [52.448, 0.624],
+    peterborough: [52.570, -0.243],
+    "pe1": [52.575, -0.241],
+    "pe2": [52.563, -0.254],
+    bedford: [52.136, -0.467],
+    "mk40": [52.136, -0.467],
+    milton: [52.040, -0.759],
+    "milton keynes": [52.040, -0.759],
+    "mk9": [52.040, -0.759],
+    colchester: [51.895, 0.891],
+    "co1": [51.895, 0.891]
+  };
+
+  if (outwardCode && knownLocations[outwardCode]) {
+    return knownLocations[outwardCode];
+  }
+
+  return Object.entries(knownLocations)
+    .find(([label]) => normalised.includes(label))?.[1] || null;
+}
+
+function haversineMiles([latA, lonA], [latB, lonB]) {
+  const earthRadiusMiles = 3958.8;
+  const toRadians = (degrees) => degrees * Math.PI / 180;
+  const deltaLat = toRadians(latB - latA);
+  const deltaLon = toRadians(lonB - lonA);
+  const a = Math.sin(deltaLat / 2) ** 2
+    + Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(deltaLon / 2) ** 2;
+
+  return 2 * earthRadiusMiles * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 async function sendQuoteRequestEmails(request) {

@@ -702,6 +702,15 @@ h3 {
   background: #f9fbfd;
 }
 
+.distance-note {
+  min-height: 22px;
+  margin: -4px 0 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .estimator-nav {
   display: grid;
   grid-template-columns: 0.35fr 1fr;

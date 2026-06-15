@@ -24,6 +24,9 @@ const estimatorPrice = document.querySelector("[data-estimator-price]");
 const estimatorVolume = document.querySelector("[data-estimator-volume]");
 const estimatorSummary = document.querySelector("[data-estimator-summary]");
 const estimatorReview = document.querySelector("[data-estimator-review]");
+const estimatorFrom = document.querySelector("[data-estimator-from]");
+const estimatorTo = document.querySelector("[data-estimator-to]");
+const estimatorDistanceNote = document.querySelector("[data-estimator-distance-note]");
 const estimatorContactForm = document.querySelector("[data-estimator-contact-form]");
 const estimatorNote = document.querySelector("[data-estimator-note]");
 const estimatorSubmit = document.querySelector("[data-estimator-submit]");
@@ -218,7 +221,8 @@ const updateEstimatorActions = () => {
   if (!estimator) return;
 
   const propertyReady = Boolean(estimatorState.property && estimatorState.furnished);
-  const distanceReady = Boolean(estimatorState.distance);
+  const locationsReady = Boolean(estimatorFrom?.value.trim() && estimatorTo?.value.trim());
+  const distanceReady = Boolean(estimatorState.distance || locationsReady);
 
   estimator.querySelectorAll("[data-estimator-step='1'] [data-estimator-next]")
     .forEach((button) => {
@@ -264,6 +268,57 @@ const calculateEstimate = () => {
   if (estimatorSummary) {
     estimatorSummary.textContent = `${property.label} - ${furnished.label} - ${distance.label} (${distance.distance} miles)${extrasLabel}`;
   }
+};
+
+const clearTypedDistance = () => {
+  if (estimatorFrom) estimatorFrom.value = "";
+  if (estimatorTo) estimatorTo.value = "";
+  if (estimatorDistanceNote) estimatorDistanceNote.textContent = "";
+};
+
+const clearPresetDistance = () => {
+  estimator?.querySelectorAll("[data-estimator-option='distance']")
+    .forEach((option) => option.classList.remove("active"));
+  estimatorState.distance = null;
+};
+
+const calculateTypedDistance = async () => {
+  const from = estimatorFrom?.value.trim();
+  const to = estimatorTo?.value.trim();
+
+  if (!from || !to) {
+    return false;
+  }
+
+  if (estimatorDistanceNote) {
+    estimatorDistanceNote.textContent = "Calculating distance from your locations...";
+  }
+
+  const response = await fetch("/api/estimate-distance", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ from, to })
+  });
+  const result = await response.json();
+
+  if (!response.ok || !result.ok) {
+    throw new Error(result.message || "We could not calculate that distance. Please choose a preset mileage.");
+  }
+
+  estimatorState.distance = {
+    label: result.label,
+    distance: Number(result.distance),
+    price: Number(result.price)
+  };
+
+  if (estimatorDistanceNote) {
+    estimatorDistanceNote.textContent = `Calculated around ${result.distance} miles (${result.tierLabel}).`;
+  }
+
+  updateEstimatorActions();
+  return true;
 };
 
 const renderEstimatorReview = () => {
@@ -347,6 +402,7 @@ const selectEstimatorOption = (button) => {
   }
 
   if (group === "distance") {
+    clearTypedDistance();
     estimatorState.distance = {
       label: button.dataset.label,
       distance: Number(button.dataset.distance),
@@ -387,8 +443,34 @@ estimator?.addEventListener("click", (event) => {
   }
 });
 
+[estimatorFrom, estimatorTo].forEach((input) => {
+  input?.addEventListener("input", () => {
+    clearPresetDistance();
+    if (estimatorDistanceNote) {
+      estimatorDistanceNote.textContent = "";
+    }
+    updateEstimatorActions();
+  });
+});
+
 estimator?.querySelectorAll("[data-estimator-next]").forEach((button) => {
-  button.addEventListener("click", () => showEstimatorStep(estimatorState.step + 1));
+  button.addEventListener("click", async () => {
+    if (estimatorState.step === 2 && !estimatorState.distance) {
+      try {
+        button.disabled = true;
+        const calculated = await calculateTypedDistance();
+        if (!calculated) return;
+      } catch (error) {
+        if (estimatorDistanceNote) {
+          estimatorDistanceNote.textContent = error.message;
+        }
+        updateEstimatorActions();
+        return;
+      }
+    }
+
+    showEstimatorStep(estimatorState.step + 1);
+  });
 });
 
 estimator?.querySelectorAll("[data-estimator-back]").forEach((button) => {
