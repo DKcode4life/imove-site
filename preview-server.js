@@ -587,6 +587,7 @@ async function getGoogleReviews() {
       placeName: place.name || "iMove",
       rating: Number(place.rating || 0),
       totalReviews: Number(place.user_ratings_total || 0),
+      placeUrl: place.url || "",
       reviews: reviews.length ? reviews : getFallbackReviews()
     };
   } catch (error) {

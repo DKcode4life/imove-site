@@ -46,6 +46,7 @@ const galleryLightboxCount = document.querySelector("[data-gallery-lightbox-coun
 const galleryClose = document.querySelector("[data-gallery-close]");
 const galleryPrev = document.querySelector("[data-gallery-prev]");
 const galleryNext = document.querySelector("[data-gallery-next]");
+const googleReviewSummary = document.querySelector("[data-google-review-summary]");
 const googleReviewsGrid = document.querySelector("[data-google-reviews]");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const whatsappUrl = "https://wa.me/441638255255";
@@ -105,6 +106,32 @@ const googleLogoSvg = `
     <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.05l3.69 2.84C6.73 7.31 9.15 5.38 12 5.38Z"/>
   </svg>`;
 
+const googleSummaryLogoSvg = googleLogoSvg.replace("google-mark", "google-summary-mark");
+
+const formatRating = (rating) => {
+  const numericRating = Number(rating || 0);
+  return numericRating ? numericRating.toFixed(1) : "5.0";
+};
+
+const renderGoogleReviewSummary = (data = {}) => {
+  if (!googleReviewSummary) return;
+
+  const rating = Number(data.rating || 0);
+  const totalReviews = Number(data.totalReviews || 0);
+  const reviewUrl = data.placeUrl || "https://www.google.com/search?q=iMove+Removals+and+Storage+reviews";
+  const reviewLabel = totalReviews
+    ? `${totalReviews.toLocaleString("en-GB")} Google reviews`
+    : "Read our Google reviews";
+
+  googleReviewSummary.innerHTML = `
+    ${googleSummaryLogoSvg}
+    <div class="google-review-rating">
+      <strong>${formatRating(rating)}</strong>
+      <span class="review-stars" aria-label="${formatRating(rating)} out of 5 stars">${renderStars(rating || 5)}</span>
+    </div>
+    <a href="${escapeHtml(reviewUrl)}" target="_blank" rel="noopener">${escapeHtml(reviewLabel)}</a>`;
+};
+
 const renderGoogleReviews = (reviews) => {
   if (!googleReviewsGrid) return;
 
@@ -139,8 +166,10 @@ const loadGoogleReviews = async () => {
     }
 
     const data = await response.json();
+    renderGoogleReviewSummary(data);
     renderGoogleReviews(data.reviews);
   } catch (error) {
+    renderGoogleReviewSummary();
     renderGoogleReviews(fallbackGoogleReviews);
   }
 };
