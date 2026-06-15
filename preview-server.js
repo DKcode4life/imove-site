@@ -437,7 +437,7 @@ async function estimateMoveDistance(request) {
   }
 
   const distance = settings.mapsApiKey
-    ? await getGoogleDrivingDistance(from, to)
+    ? await getGoogleDistanceWithFallback(from, to)
     : getApproximateDistance(from, to);
 
   if (!distance.ok) {
@@ -460,8 +460,8 @@ async function estimateMoveDistance(request) {
 
 async function getGoogleDrivingDistance(from, to) {
   const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
-  url.searchParams.set("origins", from);
-  url.searchParams.set("destinations", to);
+  url.searchParams.set("origins", formatGoogleLocation(from));
+  url.searchParams.set("destinations", formatGoogleLocation(to));
   url.searchParams.set("mode", "driving");
   url.searchParams.set("units", "imperial");
   url.searchParams.set("region", "uk");
@@ -479,6 +479,7 @@ async function getGoogleDrivingDistance(from, to) {
   if (data.status !== "OK" || element?.status !== "OK" || !element.distance?.value) {
     return {
       ok: false,
+      reason: data.error_message || element?.status || data.status,
       message: "We could not calculate that distance. Please check the locations or choose a preset mileage."
     };
   }
@@ -488,6 +489,39 @@ async function getGoogleDrivingDistance(from, to) {
     source: "google-maps",
     miles: element.distance.value / 1609.344
   };
+}
+
+async function getGoogleDistanceWithFallback(from, to) {
+  try {
+    const googleDistance = await getGoogleDrivingDistance(from, to);
+
+    if (googleDistance.ok) {
+      return googleDistance;
+    }
+  } catch (error) {
+    // The estimator can still serve known UK towns/postcode areas if Google Maps is unavailable.
+  }
+
+  const approximateDistance = getApproximateDistance(from, to);
+
+  if (approximateDistance.ok) {
+    return approximateDistance;
+  }
+
+  return {
+    ok: false,
+    message: "We could not calculate that distance. Please check the locations or choose a preset mileage."
+  };
+}
+
+function formatGoogleLocation(value) {
+  const location = String(value || "").trim();
+
+  if (/\b(uk|united kingdom)\b/i.test(location)) {
+    return location;
+  }
+
+  return `${location}, UK`;
 }
 
 async function getEstimatorDistanceTier(miles) {
