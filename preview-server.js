@@ -34,7 +34,8 @@ const settings = {
   slotStepMinutes: Number(process.env.SURVEY_SLOT_STEP_MINUTES || 30),
   videoDurationMinutes: Number(process.env.VIDEO_SURVEY_DURATION_MINUTES || 30),
   physicalDurationMinutes: Number(process.env.PHYSICAL_SURVEY_DURATION_MINUTES || 60),
-  mapsApiKey: process.env.GOOGLE_MAPS_API_KEY || ""
+  mapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+  publicSiteUrl: (process.env.PUBLIC_SITE_URL || "https://www.myimove.co.uk").replace(/\/+$/, "")
 };
 
 const emailSettings = {
@@ -363,7 +364,10 @@ async function sendEstimateRequestEmails(request) {
       intro: "Thank you for using the iMove instant estimator. We have received your estimate request and the team will review the details you provided.",
       cardLabel: "Estimated Move Details",
       cardText: `Estimated cost: \u00a3${estimate.low} - \u00a3${estimate.high}<br>Property: ${request.property.label}<br>Distance: ${request.distance.label}`,
-      closing: "If we need anything else to provide a clearer quote, one of the team will contact you very soon."
+      closing: "If we need anything else to provide a clearer quote, one of the team will contact you very soon.",
+      actionText: "In the meantime, if you wish to book a survey, click below.",
+      actionLabel: "Book a house survey here",
+      actionUrl: `${settings.publicSiteUrl}/book-survey.html`
     }),
     replyTo: customer.email
   });
@@ -841,13 +845,25 @@ function buildCustomerConfirmationText(name, requestType) {
   ].join("\n");
 }
 
-function buildCustomerConfirmationHtml({ title, name, intro, cardLabel, cardText, closing }) {
+function buildCustomerConfirmationHtml({ title, name, intro, cardLabel, cardText, closing, actionText, actionLabel, actionUrl }) {
   const safeTitle = escapeHtml(title);
   const safeName = escapeHtml(name);
   const safeIntro = escapeHtml(intro);
   const safeCardLabel = escapeHtml(cardLabel);
   const safeCardText = sanitizeEmailHtml(cardText);
   const safeClosing = escapeHtml(closing);
+  const safeActionText = actionText ? escapeHtml(actionText) : "";
+  const safeActionLabel = actionLabel ? escapeHtml(actionLabel) : "";
+  const safeActionUrl = actionUrl ? escapeHtml(actionUrl) : "";
+  const actionBlock = safeActionUrl && safeActionLabel ? `
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 26px;">
+              <tr>
+                <td align="center">
+                  ${safeActionText ? `<p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:1.6;">${safeActionText}</p>` : ""}
+                  <a href="${safeActionUrl}" style="display:inline-block;background:#0891b2;color:#ffffff;text-decoration:none;border-radius:10px;padding:16px 28px;font-size:15px;font-weight:700;box-shadow:0 12px 26px rgba(8,145,178,0.24);">${safeActionLabel}</a>
+                </td>
+              </tr>
+            </table>` : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -875,6 +891,7 @@ function buildCustomerConfirmationHtml({ title, name, intro, cardLabel, cardText
               </tr>
             </table>
             <p style="margin:0 0 24px;">${safeClosing}</p>
+            ${actionBlock}
             <p style="margin:0;font-size:14px;color:#475569;">Kind regards,<br><strong>The iMove Team</strong></p>
           </td>
         </tr>
