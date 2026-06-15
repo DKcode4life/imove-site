@@ -768,12 +768,14 @@ async function sendSurveyBookingEmails(booking) {
   const appointmentText = isVideoSurvey
     ? `Zoom video survey booked<br>${booking.survey_date} at ${booking.appointment_time}`
     : `${booking.survey_type}<br>${booking.survey_date} at ${booking.appointment_time}${booking.address ? `<br>${booking.address}` : ""}`;
+  const surveySubjectLabel = isVideoSurvey ? "video survey" : "physical survey";
   const details = [
-    "New survey booking from the iMove website.",
+    `New ${surveySubjectLabel} booking from the iMove website.`,
     "",
     `Survey type: ${booking.survey_type}`,
     `Date: ${booking.survey_date}`,
     `Time: ${booking.appointment_time}`,
+    isVideoSurvey ? `Zoom link: ${zoomSurveyUrl}` : "",
     "",
     `Name: ${booking.name}`,
     `Phone: ${booking.phone}`,
@@ -787,9 +789,9 @@ async function sendSurveyBookingEmails(booking) {
     formName: "Survey Booking",
     customerName: booking.name,
     customerEmail: booking.email,
-    adminSubject: `iMove survey booking - ${booking.name}`,
+    adminSubject: `iMove ${surveySubjectLabel} booking - ${booking.name}`,
     adminText: details,
-    customerSubject: "Your iMove survey booking has been received",
+    customerSubject: `Your iMove ${surveySubjectLabel} booking has been received`,
     customerText: [
       `Hi ${booking.name},`,
       "",
