@@ -252,22 +252,20 @@ async function createSurveyBooking(booking) {
     };
   }
 
-  if (availabilityResult.source === "calendar-error") {
-    return {
-      ok: false,
-      message: "Live calendar availability could not be verified. Please try again shortly or call 01638 255 255."
-    };
-  }
+  const isProvisionalBooking = availabilityResult.source === "calendar-error";
+  let needsManualCalendarConfirmation = isProvisionalBooking;
 
-  if (hasGoogleCredentials()) {
+  if (hasGoogleCredentials() && !isProvisionalBooking) {
     try {
       await createGoogleCalendarEvent(booking, typeKey);
     } catch (error) {
       console.warn(`Google calendar booking failed: ${error.message}`);
-      return {
-        ok: false,
-        message: "The survey time looked available, but Google Calendar could not save the booking. Please try again shortly or call 01638 255 255."
-      };
+      needsManualCalendarConfirmation = true;
+      mockBookings.push({
+        survey_date: booking.survey_date,
+        appointment_time: booking.appointment_time,
+        duration_minutes: getDurationMinutes(typeKey)
+      });
     }
   } else {
     mockBookings.push({
@@ -285,7 +283,9 @@ async function createSurveyBooking(booking) {
     console.warn(`Survey booking email failed: ${error.message}`);
   }
 
-  const bookingMessage = hasGoogleCredentials()
+  const bookingMessage = needsManualCalendarConfirmation
+    ? "Survey booking request received. Live Google Calendar could not be checked, so the team will manually confirm the appointment."
+    : hasGoogleCredentials()
     ? "Survey booked in Google Calendar. The selected time is now blocked out."
     : "Demo booking saved locally. Add Google Calendar credentials to make this a real calendar booking.";
 
@@ -1215,11 +1215,23 @@ async function getGoogleAccessToken() {
   });
 
   if (!response.ok) {
-    throw new Error(`Google token refresh failed: ${response.status}`);
+    const googleError = await readGoogleError(response);
+    throw new Error(`Google token refresh failed: ${response.status}${googleError ? ` (${googleError})` : ""}`);
   }
 
   const data = await response.json();
   return data.access_token;
+}
+
+async function readGoogleError(response) {
+  try {
+    const data = await response.json();
+    return [data.error, data.error_description]
+      .filter(Boolean)
+      .join(": ");
+  } catch (error) {
+    return "";
+  }
 }
 
 function hasGoogleCredentials() {

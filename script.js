@@ -804,7 +804,7 @@ const loadSurveyAvailability = async () => {
 
       if (surveyNote) {
         if (data.source === "calendar-error") {
-          surveyNote.textContent = "Live calendar availability could not be checked. Please refresh shortly or call 01638 255 255.";
+          surveyNote.textContent = "Live calendar availability could not be checked, so bookings will be treated as provisional and manually confirmed by the team.";
         } else {
           surveyNote.textContent = data.source === "google-calendar"
             ? "Live availability is coming from Google Calendar."
@@ -839,7 +839,7 @@ const renderTimes = () => {
   if (surveyNote) {
     const surveyLabel = selectedType === "physical" ? "physical survey" : "video survey";
     surveyNote.textContent = surveyAvailabilitySource === "calendar-error"
-      ? "Live calendar availability could not be checked. Please refresh shortly or call 01638 255 255."
+      ? `${slots.length} provisional ${surveyLabel} slots available on ${selectedDate?.label}. The team will manually confirm your appointment.`
       : `${slots.length} ${surveyLabel} slots available on ${selectedDate?.label}.`;
   }
 
@@ -872,9 +872,8 @@ const updateBookingButton = () => {
   const requiredFieldsComplete = visibleRequiredFields.every((field) => field.value.trim() !== "");
   const contactFieldsValid = visibleRequiredFields.every((field) => field.checkValidity());
   const hasTimeSlot = Boolean(appointmentTime?.value);
-  const calendarAvailable = surveyAvailabilitySource !== "calendar-error";
 
-  bookingSubmit.disabled = !(requiredFieldsComplete && contactFieldsValid && hasTimeSlot && calendarAvailable);
+  bookingSubmit.disabled = !(requiredFieldsComplete && contactFieldsValid && hasTimeSlot);
 };
 
 if (surveyForm) {
