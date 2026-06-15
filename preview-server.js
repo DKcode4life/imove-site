@@ -349,6 +349,14 @@ async function sendEstimateRequestEmails(request) {
     adminText,
     customerSubject: "We have received your iMove estimate request",
     customerText: buildCustomerConfirmationText(customer.name, "estimate request"),
+    customerHtml: buildCustomerConfirmationHtml({
+      title: "Estimate Request Received",
+      name: customer.name,
+      intro: "Thank you for using the iMove instant estimator. We have received your estimate request and the team will review the details you provided.",
+      cardLabel: "Estimated Move Details",
+      cardText: `Estimated cost: \u00a3${estimate.low} - \u00a3${estimate.high}<br>Property: ${request.property.label}<br>Distance: ${request.distance.label}`,
+      closing: "If we need anything else to provide a clearer quote, one of the team will contact you very soon."
+    }),
     replyTo: customer.email
   });
 }
@@ -444,6 +452,14 @@ async function sendQuoteRequestEmails(request) {
     adminText,
     customerSubject: "We have received your iMove quote request",
     customerText: buildCustomerConfirmationText(request.full_name, "quote request"),
+    customerHtml: buildCustomerConfirmationHtml({
+      title: "Quote Request Received",
+      name: request.full_name,
+      intro: "Thank you for sending your move details. We have received your quote request and our team will review everything you submitted.",
+      cardLabel: "Move Details",
+      cardText: `From: ${request.moving_from}<br>To: ${request.moving_to}<br>Moving date: ${request.move_date}<br>Property: ${request.property_type}, ${request.rooms}`,
+      closing: "If anything needs clarifying, our crew will get in touch with you very soon."
+    }),
     replyTo: request.email
   });
 }
@@ -478,6 +494,14 @@ async function createContactRequest(request) {
     adminText,
     customerSubject: "We have received your iMove enquiry",
     customerText: buildCustomerConfirmationText(request.name, "enquiry"),
+    customerHtml: buildCustomerConfirmationHtml({
+      title: "Enquiry Received",
+      name: request.name,
+      intro: "Thank you for contacting iMove. We have received your enquiry and a member of our team will review your message.",
+      cardLabel: "Your Message",
+      cardText: request.message,
+      closing: "Our crew will get in touch with you very soon."
+    }),
     replyTo: request.email
   });
 
@@ -546,11 +570,19 @@ async function sendSurveyBookingEmails(booking) {
       "Kind regards,",
       "The iMove team"
     ].join("\n"),
+    customerHtml: buildCustomerConfirmationHtml({
+      title: "Survey Booking Received",
+      name: booking.name,
+      intro: "Thank you for choosing iMove. Your survey booking request has been received and we look forward to helping you with your move.",
+      cardLabel: "Survey Appointment",
+      cardText: `${booking.survey_type}<br>${booking.survey_date} at ${booking.appointment_time}${booking.address ? `<br>${booking.address}` : ""}`,
+      closing: "If you have any questions or need to rearrange, please do not hesitate to get in touch. We are always happy to help."
+    }),
     replyTo: booking.email
   });
 }
 
-async function sendSubmissionEmails({ adminSubject, adminText, customerSubject, customerText, customerEmail, replyTo }) {
+async function sendSubmissionEmails({ adminSubject, adminText, customerSubject, customerText, customerHtml, customerEmail, replyTo }) {
   if (!emailSettings.resendApiKey) {
     return { sent: false };
   }
@@ -568,7 +600,8 @@ async function sendSubmissionEmails({ adminSubject, adminText, customerSubject, 
     emails.push(sendEmail({
       to: customerEmail,
       subject: customerSubject,
-      text: customerText
+      text: customerText,
+      html: customerHtml
     }));
   }
 
@@ -576,7 +609,7 @@ async function sendSubmissionEmails({ adminSubject, adminText, customerSubject, 
   return { sent: true };
 }
 
-async function sendEmail({ to, subject, text, replyTo }) {
+async function sendEmail({ to, subject, text, html, replyTo }) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -588,6 +621,7 @@ async function sendEmail({ to, subject, text, replyTo }) {
       to: [to],
       subject,
       text,
+      html,
       reply_to: replyTo || undefined
     })
   });
@@ -608,6 +642,76 @@ function buildCustomerConfirmationText(name, requestType) {
     "Kind regards,",
     "The iMove team"
   ].join("\n");
+}
+
+function buildCustomerConfirmationHtml({ title, name, intro, cardLabel, cardText, closing }) {
+  const safeTitle = escapeHtml(title);
+  const safeName = escapeHtml(name);
+  const safeIntro = escapeHtml(intro);
+  const safeCardLabel = escapeHtml(cardLabel);
+  const safeCardText = sanitizeEmailHtml(cardText);
+  const safeClosing = escapeHtml(closing);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#1e293b;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;max-width:600px;width:100%;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%);padding:32px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">${safeTitle}</h1>
+            <p style="margin:8px 0 0;color:#cffafe;font-size:14px;">iMove Relocations Ltd</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="margin:0 0 20px;font-size:16px;">Dear <strong>${safeName}</strong>,</p>
+            <p style="margin:0 0 20px;">${safeIntro}</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;margin:0 0 24px;">
+              <tr>
+                <td style="padding:24px 28px;">
+                  <p style="margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#0369a1;">${safeCardLabel}</p>
+                  <p style="margin:0;font-size:18px;font-weight:700;color:#0c4a6e;line-height:1.5;">${safeCardText}</p>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 24px;">${safeClosing}</p>
+            <p style="margin:0;font-size:14px;color:#475569;">Kind regards,<br><strong>The iMove Team</strong></p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#475569;">iMove Relocations Ltd</p>
+            <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">94C Hampstead Avenue, Mildenhall, Suffolk, IP28 7AS</p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">
+              <a href="tel:01638255255" style="color:#0891b2;text-decoration:none;">01638 255 255</a>
+              &nbsp;&middot;&nbsp;
+              <a href="mailto:info@myimove.co.uk" style="color:#0891b2;text-decoration:none;">info@myimove.co.uk</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+function sanitizeEmailHtml(value) {
+  return String(value ?? "")
+    .split("<br>")
+    .map((part) => escapeHtml(part))
+    .join("<br>");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 function isValidEmail(email) {
