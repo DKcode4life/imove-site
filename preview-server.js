@@ -44,6 +44,8 @@ const emailSettings = {
 
 const mockBookings = [];
 const mockEstimateRequests = [];
+const mockQuoteRequests = [];
+const mockContactRequests = [];
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -68,6 +70,20 @@ const server = http.createServer(async (req, res) => {
     if (requestUrl.pathname === "/api/estimate-requests" && req.method === "POST") {
       const request = await readJson(req);
       const result = await createEstimateRequest(request);
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/quote-requests" && req.method === "POST") {
+      const request = await readJson(req);
+      const result = await createQuoteRequest(request);
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/contact-requests" && req.method === "POST") {
+      const request = await readJson(req);
+      const result = await createContactRequest(request);
       sendJson(res, result.ok ? 200 : 400, result);
       return;
     }
@@ -231,21 +247,25 @@ async function createSurveyBooking(booking) {
 
   if (hasGoogleCredentials()) {
     await createGoogleCalendarEvent(booking, typeKey);
-    return {
-      ok: true,
-      message: "Survey booked in Google Calendar. The selected time is now blocked out."
-    };
+  } else {
+    mockBookings.push({
+      survey_date: booking.survey_date,
+      appointment_time: booking.appointment_time,
+      duration_minutes: getDurationMinutes(typeKey)
+    });
   }
 
-  mockBookings.push({
-    survey_date: booking.survey_date,
-    appointment_time: booking.appointment_time,
-    duration_minutes: getDurationMinutes(typeKey)
-  });
+  const emailResult = await sendSurveyBookingEmails(booking);
+  const bookingMessage = hasGoogleCredentials()
+    ? "Survey booked in Google Calendar. The selected time is now blocked out."
+    : "Demo booking saved locally. Add Google Calendar credentials to make this a real calendar booking.";
 
   return {
     ok: true,
-    message: "Demo booking saved locally. Add Google Calendar credentials to make this a real calendar booking."
+    emailSent: emailResult.sent,
+    message: emailResult.sent
+      ? `${bookingMessage} Confirmation emails have been sent.`
+      : bookingMessage
   };
 }
 
@@ -261,13 +281,11 @@ async function createEstimateRequest(request) {
     request
   });
 
-  if (emailSettings.resendApiKey) {
-    await sendEstimateRequestEmail(request);
-  }
+  const emailResult = await sendEstimateRequestEmails(request);
 
   return {
     ok: true,
-    emailSent: Boolean(emailSettings.resendApiKey),
+    emailSent: emailResult.sent,
     message: "Thank you, your request has been received and a member of staff will contact you very soon."
   };
 }
@@ -284,7 +302,7 @@ function validateEstimateRequest(request) {
     };
   }
 
-  if (!String(customer.email).includes("@")) {
+  if (!isValidEmail(customer.email)) {
     return {
       ok: false,
       message: "Please enter a valid email address."
@@ -301,12 +319,11 @@ function validateEstimateRequest(request) {
   return { ok: true };
 }
 
-async function sendEstimateRequestEmail(request) {
+async function sendEstimateRequestEmails(request) {
   const customer = request.customer || {};
   const estimate = request.estimate || {};
   const extras = Array.isArray(request.extras) && request.extras.length ? request.extras.join(", ") : "None selected";
-  const subject = `iMove estimator enquiry - ${customer.name}`;
-  const text = [
+  const adminText = [
     "New estimator enquiry from the iMove website.",
     "",
     `Name: ${customer.name}`,
@@ -324,6 +341,242 @@ async function sendEstimateRequestEmail(request) {
     "Source: iMove website estimator"
   ].join("\n");
 
+  return sendSubmissionEmails({
+    formName: "Instant Move Estimator",
+    customerName: customer.name,
+    customerEmail: customer.email,
+    adminSubject: `iMove estimator enquiry - ${customer.name}`,
+    adminText,
+    customerSubject: "We have received your iMove estimate request",
+    customerText: buildCustomerConfirmationText(customer.name, "estimate request"),
+    replyTo: customer.email
+  });
+}
+
+async function createQuoteRequest(request) {
+  const validation = validateQuoteRequest(request);
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  mockQuoteRequests.push({
+    created_at: new Date().toISOString(),
+    request
+  });
+
+  const emailResult = await sendQuoteRequestEmails(request);
+
+  return {
+    ok: true,
+    emailSent: emailResult.sent,
+    message: "Thank you, your quote request has been received and a member of staff will contact you very soon."
+  };
+}
+
+function validateQuoteRequest(request) {
+  const required = [
+    "full_name",
+    "email",
+    "phone",
+    "moving_from",
+    "moving_to",
+    "move_date",
+    "property_type",
+    "rooms"
+  ];
+
+  if (request.property_type === "Flat / apartment") {
+    required.push("flat_floor", "has_lift");
+  }
+
+  const missing = required.filter((key) => !String(request[key] || "").trim());
+
+  if (missing.length) {
+    return {
+      ok: false,
+      message: "Please complete all required quote fields."
+    };
+  }
+
+  if (!isValidEmail(request.email)) {
+    return {
+      ok: false,
+      message: "Please enter a valid email address."
+    };
+  }
+
+  return { ok: true };
+}
+
+async function sendQuoteRequestEmails(request) {
+  const flatDetails = request.property_type === "Flat / apartment"
+    ? [
+        `Flat floor: ${request.flat_floor}`,
+        `Lift available: ${request.has_lift}`
+      ]
+    : [];
+  const adminText = [
+    "New quote request from the iMove website.",
+    "",
+    `Name: ${request.full_name}`,
+    `Phone: ${request.phone}`,
+    `Email: ${request.email}`,
+    "",
+    `Moving from: ${request.moving_from}`,
+    `Moving to: ${request.moving_to}`,
+    `Move date: ${request.move_date}`,
+    "",
+    `Property type: ${request.property_type}`,
+    `Rooms/property size: ${request.rooms}`,
+    ...flatDetails,
+    "",
+    `Notes: ${request.notes || "No notes provided"}`,
+    "",
+    "Source: iMove website get a quote page"
+  ].join("\n");
+
+  return sendSubmissionEmails({
+    formName: "Get a Quote",
+    customerName: request.full_name,
+    customerEmail: request.email,
+    adminSubject: `iMove quote request - ${request.full_name}`,
+    adminText,
+    customerSubject: "We have received your iMove quote request",
+    customerText: buildCustomerConfirmationText(request.full_name, "quote request"),
+    replyTo: request.email
+  });
+}
+
+async function createContactRequest(request) {
+  const validation = validateContactRequest(request);
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  mockContactRequests.push({
+    created_at: new Date().toISOString(),
+    request
+  });
+
+  const adminText = [
+    "New quick contact enquiry from the iMove website.",
+    "",
+    `Name: ${request.name}`,
+    `Phone: ${request.phone}`,
+    `Email: ${request.email}`,
+    `Message: ${request.message}`,
+    "",
+    "Source: iMove website quick contact form"
+  ].join("\n");
+  const emailResult = await sendSubmissionEmails({
+    formName: "Quick Contact",
+    customerName: request.name,
+    customerEmail: request.email,
+    adminSubject: `iMove quick contact enquiry - ${request.name}`,
+    adminText,
+    customerSubject: "We have received your iMove enquiry",
+    customerText: buildCustomerConfirmationText(request.name, "enquiry"),
+    replyTo: request.email
+  });
+
+  return {
+    ok: true,
+    emailSent: emailResult.sent,
+    message: "Thank you, your enquiry has been received and a member of staff will contact you very soon."
+  };
+}
+
+function validateContactRequest(request) {
+  const required = ["name", "phone", "email", "message"];
+  const missing = required.filter((key) => !String(request[key] || "").trim());
+
+  if (missing.length) {
+    return {
+      ok: false,
+      message: "Please enter your name, phone number, email address, and message."
+    };
+  }
+
+  if (!isValidEmail(request.email)) {
+    return {
+      ok: false,
+      message: "Please enter a valid email address."
+    };
+  }
+
+  return { ok: true };
+}
+
+async function sendSurveyBookingEmails(booking) {
+  const details = [
+    "New survey booking from the iMove website.",
+    "",
+    `Survey type: ${booking.survey_type}`,
+    `Date: ${booking.survey_date}`,
+    `Time: ${booking.appointment_time}`,
+    "",
+    `Name: ${booking.name}`,
+    `Phone: ${booking.phone}`,
+    `Email: ${booking.email}`,
+    booking.address ? `Address: ${booking.address}` : "",
+    "",
+    "Source: iMove website survey booking form"
+  ].filter(Boolean).join("\n");
+
+  return sendSubmissionEmails({
+    formName: "Survey Booking",
+    customerName: booking.name,
+    customerEmail: booking.email,
+    adminSubject: `iMove survey booking - ${booking.name}`,
+    adminText: details,
+    customerSubject: "Your iMove survey booking has been received",
+    customerText: [
+      `Hi ${booking.name},`,
+      "",
+      "Thank you. We have received your survey booking request.",
+      "",
+      `Survey type: ${booking.survey_type}`,
+      `Date: ${booking.survey_date}`,
+      `Time: ${booking.appointment_time}`,
+      "",
+      "Our crew will get in touch with you if we need to confirm any details before the appointment.",
+      "",
+      "Kind regards,",
+      "The iMove team"
+    ].join("\n"),
+    replyTo: booking.email
+  });
+}
+
+async function sendSubmissionEmails({ adminSubject, adminText, customerSubject, customerText, customerEmail, replyTo }) {
+  if (!emailSettings.resendApiKey) {
+    return { sent: false };
+  }
+
+  const emails = [
+    sendEmail({
+      to: emailSettings.to,
+      subject: adminSubject,
+      text: adminText,
+      replyTo
+    })
+  ];
+
+  if (customerEmail) {
+    emails.push(sendEmail({
+      to: customerEmail,
+      subject: customerSubject,
+      text: customerText
+    }));
+  }
+
+  await Promise.all(emails);
+  return { sent: true };
+}
+
+async function sendEmail({ to, subject, text, replyTo }) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -332,15 +585,33 @@ async function sendEstimateRequestEmail(request) {
     },
     body: JSON.stringify({
       from: emailSettings.from,
-      to: [emailSettings.to],
+      to: [to],
       subject,
-      text
+      text,
+      reply_to: replyTo || undefined
     })
   });
 
   if (!response.ok) {
-    throw new Error(`Estimator email failed: ${response.status}`);
+    throw new Error(`Email delivery failed: ${response.status}`);
   }
+}
+
+function buildCustomerConfirmationText(name, requestType) {
+  return [
+    `Hi ${name},`,
+    "",
+    `Thank you. We have received your ${requestType}.`,
+    "",
+    "This email is to confirm it has been received by us, and our crew will get in touch with you very soon.",
+    "",
+    "Kind regards,",
+    "The iMove team"
+  ].join("\n");
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 }
 
 function validateBooking(booking) {
@@ -356,6 +627,13 @@ function validateBooking(booking) {
     return {
       ok: false,
       message: "Please complete all required booking fields."
+    };
+  }
+
+  if (!isValidEmail(booking.email)) {
+    return {
+      ok: false,
+      message: "Please enter a valid email address."
     };
   }
 

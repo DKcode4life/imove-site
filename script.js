@@ -28,6 +28,12 @@ const estimatorContactForm = document.querySelector("[data-estimator-contact-for
 const estimatorNote = document.querySelector("[data-estimator-note]");
 const estimatorSubmit = document.querySelector("[data-estimator-submit]");
 const estimatorSuccess = document.querySelector("[data-estimator-success]");
+const quoteRequestForm = document.querySelector("[data-quote-request-form]");
+const quotePropertyType = document.querySelectorAll("[data-quote-property-type]");
+const quoteFlatFields = document.querySelector("[data-quote-flat-fields]");
+const quoteFlatRequiredFields = document.querySelectorAll("[data-quote-flat-required]");
+const quoteNote = document.querySelector("[data-quote-note]");
+const quoteSubmit = document.querySelector("[data-quote-submit]");
 let galleryItems = [...document.querySelectorAll("[data-gallery-item]")];
 const galleryFilterButtons = document.querySelectorAll("[data-gallery-filter]");
 const galleryLightbox = document.querySelector("[data-gallery-lightbox]");
@@ -473,6 +479,76 @@ estimatorContactForm?.addEventListener("submit", async (event) => {
   }
 });
 
+const updateQuoteFlatFields = () => {
+  if (!quoteFlatFields) return;
+
+  const selectedType = [...quotePropertyType].find((input) => input.checked)?.value || "";
+  const isFlat = selectedType === "Flat / apartment";
+
+  quoteFlatFields.hidden = !isFlat;
+  quoteFlatRequiredFields.forEach((field) => {
+    field.required = isFlat;
+    if (!isFlat) {
+      field.value = "";
+    }
+  });
+};
+
+quotePropertyType.forEach((input) => {
+  input.addEventListener("change", updateQuoteFlatFields);
+});
+
+updateQuoteFlatFields();
+
+quoteRequestForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (!quoteRequestForm.checkValidity()) {
+    quoteRequestForm.reportValidity();
+    return;
+  }
+
+  const payload = Object.fromEntries(new FormData(quoteRequestForm).entries());
+
+  if (quoteSubmit) {
+    quoteSubmit.disabled = true;
+  }
+
+  if (quoteNote) {
+    quoteNote.textContent = "Sending your quote request...";
+  }
+
+  try {
+    const response = await fetch("/api/quote-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message || "The quote request could not be sent.");
+    }
+
+    quoteRequestForm.reset();
+    updateQuoteFlatFields();
+
+    if (quoteNote) {
+      quoteNote.textContent = result.message || "Thank you, your quote request has been received and a member of staff will contact you very soon.";
+    }
+  } catch (error) {
+    if (quoteNote) {
+      quoteNote.textContent = error.message;
+    }
+  } finally {
+    if (quoteSubmit) {
+      quoteSubmit.disabled = false;
+    }
+  }
+});
+
 window.addEventListener("scroll", () => {
   header?.classList.toggle("scrolled", window.scrollY > 12);
 });
@@ -511,6 +587,10 @@ const revealSelectors = [
   ".gallery-hero-copy",
   ".gallery-feature-card",
   ".gallery-page-heading",
+  ".quote-page-copy",
+  ".quote-request-card",
+  ".quote-help-card",
+  ".contact-map",
   ".gallery-filter-bar button",
   ".gallery-tile",
   ".gallery-cta-grid > *",
@@ -802,8 +882,8 @@ stepButtons.forEach((button) => {
         <h3>${content.title}</h3>
         <p>${content.body}</p>
         <div class="panel-actions">
-          <a class="btn btn-secondary" href="#contact">${content.primary}</a>
-          <a class="btn btn-outline-dark" href="#contact">${content.secondary}</a>
+          <a class="btn btn-secondary" href="${selectedStep === "survey" || selectedStep === "date" ? "book-survey.html" : "get-quote.html"}">${content.primary}</a>
+          <a class="btn btn-outline-dark" href="${selectedStep === "prepare" ? "services.html" : selectedStep === "survey" ? "book-survey.html" : "#contact"}">${content.secondary}</a>
         </div>
       </div>
     `;
@@ -815,10 +895,52 @@ stepButtons.forEach((button) => {
   });
 });
 
-contactForm?.addEventListener("submit", (event) => {
+contactForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  formNote.textContent = "Thanks - this demo form is ready for a real enquiry endpoint when we build the next version.";
-  contactForm.reset();
+
+  if (!contactForm.checkValidity()) {
+    contactForm.reportValidity();
+    return;
+  }
+
+  const submitButton = contactForm.querySelector("button[type='submit']");
+  const payload = Object.fromEntries(new FormData(contactForm).entries());
+
+  if (submitButton) {
+    submitButton.disabled = true;
+  }
+
+  if (formNote) {
+    formNote.textContent = "Sending your enquiry...";
+  }
+
+  try {
+    const response = await fetch("/api/contact-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message || "The enquiry could not be sent.");
+    }
+
+    if (formNote) {
+      formNote.textContent = result.message || "Thank you, your enquiry has been received and a member of staff will contact you very soon.";
+    }
+    contactForm.reset();
+  } catch (error) {
+    if (formNote) {
+      formNote.textContent = error.message;
+    }
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+    }
+  }
 });
 
 let activeGalleryFilter = "all";
