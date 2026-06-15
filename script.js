@@ -48,33 +48,75 @@ const galleryPrev = document.querySelector("[data-gallery-prev]");
 const galleryNext = document.querySelector("[data-gallery-next]");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const fallbackSurveyAvailability = [
-  {
-    date: "2026-04-27",
-    label: "Mon 27 Apr",
-    video: ["09:30", "11:00", "14:00", "16:30"],
-    physical: ["10:00", "13:30"]
-  },
-  {
-    date: "2026-04-28",
-    label: "Tue 28 Apr",
-    video: ["09:00", "12:00", "15:30"],
-    physical: ["11:30", "14:30", "17:00"]
-  },
-  {
-    date: "2026-04-29",
-    label: "Wed 29 Apr",
-    video: ["10:30", "13:00", "16:00"],
-    physical: ["09:30", "12:30"]
-  },
-  {
-    date: "2026-04-30",
-    label: "Thu 30 Apr",
-    video: ["09:30", "11:30", "15:00"],
-    physical: ["10:30", "14:00"]
+const formatFallbackDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const formatFallbackDateLabel = (date) => new Intl.DateTimeFormat("en-GB", {
+  weekday: "short",
+  day: "2-digit",
+  month: "short"
+}).format(date);
+
+const minutesToTime = (minutes) => {
+  const hours = String(Math.floor(minutes / 60)).padStart(2, "0");
+  const mins = String(minutes % 60).padStart(2, "0");
+
+  return `${hours}:${mins}`;
+};
+
+const buildFallbackSlots = (date, durationMinutes) => {
+  const slots = [];
+  const now = new Date();
+  const dayStart = 9 * 60;
+  const dayEnd = 17 * 60;
+
+  for (let minute = dayStart; minute + durationMinutes <= dayEnd; minute += 30) {
+    const slot = new Date(date);
+    slot.setHours(Math.floor(minute / 60), minute % 60, 0, 0);
+
+    if (slot > now) {
+      slots.push(minutesToTime(minute));
+    }
   }
-];
-let surveyAvailability = [...fallbackSurveyAvailability];
+
+  return slots;
+};
+
+const buildFallbackSurveyAvailability = () => {
+  const days = [];
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+
+  while (days.length < 10) {
+    const weekday = cursor.getDay();
+
+    if (weekday >= 1 && weekday <= 6) {
+      const video = buildFallbackSlots(cursor, 30);
+      const physical = buildFallbackSlots(cursor, 60);
+
+      if (video.length || physical.length) {
+        days.push({
+          date: formatFallbackDateKey(cursor),
+          label: formatFallbackDateLabel(cursor),
+          video,
+          physical
+        });
+      }
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return days;
+};
+
+let surveyAvailability = buildFallbackSurveyAvailability();
+let surveyAvailabilitySource = "demo";
 let availabilityRefreshTimer;
 
 const stepContent = {
@@ -746,7 +788,7 @@ const renderDates = () => {
 
 const loadSurveyAvailability = async () => {
   try {
-    const response = await fetch("/api/survey-availability");
+    const response = await fetch("/api/survey-availability", { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error("Availability request failed");
@@ -756,17 +798,23 @@ const loadSurveyAvailability = async () => {
 
     if (Array.isArray(data.availability) && data.availability.length) {
       surveyAvailability = data.availability;
+      surveyAvailabilitySource = data.source || "demo";
       renderDates();
       renderTimes();
 
       if (surveyNote) {
-        surveyNote.textContent = data.source === "google-calendar"
-          ? "Live availability is coming from Google Calendar."
-          : "Demo availability is active until Google Calendar credentials are added.";
+        if (data.source === "calendar-error") {
+          surveyNote.textContent = "Live calendar availability could not be checked. Please refresh shortly or call 01638 255 255.";
+        } else {
+          surveyNote.textContent = data.source === "google-calendar"
+            ? "Live availability is coming from Google Calendar."
+            : "Demo availability is active until Google Calendar credentials are added.";
+        }
       }
     }
   } catch (error) {
-    surveyAvailability = [...fallbackSurveyAvailability];
+    surveyAvailability = buildFallbackSurveyAvailability();
+    surveyAvailabilitySource = "demo";
     renderDates();
     renderTimes();
 
@@ -790,7 +838,9 @@ const renderTimes = () => {
 
   if (surveyNote) {
     const surveyLabel = selectedType === "physical" ? "physical survey" : "video survey";
-    surveyNote.textContent = `${slots.length} ${surveyLabel} slots available on ${selectedDate?.label}.`;
+    surveyNote.textContent = surveyAvailabilitySource === "calendar-error"
+      ? "Live calendar availability could not be checked. Please refresh shortly or call 01638 255 255."
+      : `${slots.length} ${surveyLabel} slots available on ${selectedDate?.label}.`;
   }
 
   updateBookingButton();
@@ -822,8 +872,9 @@ const updateBookingButton = () => {
   const requiredFieldsComplete = visibleRequiredFields.every((field) => field.value.trim() !== "");
   const contactFieldsValid = visibleRequiredFields.every((field) => field.checkValidity());
   const hasTimeSlot = Boolean(appointmentTime?.value);
+  const calendarAvailable = surveyAvailabilitySource !== "calendar-error";
 
-  bookingSubmit.disabled = !(requiredFieldsComplete && contactFieldsValid && hasTimeSlot);
+  bookingSubmit.disabled = !(requiredFieldsComplete && contactFieldsValid && hasTimeSlot && calendarAvailable);
 };
 
 if (surveyForm) {

@@ -54,11 +54,8 @@ const server = http.createServer(async (req, res) => {
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
 
     if (requestUrl.pathname === "/api/survey-availability" && req.method === "GET") {
-      const availability = await getSurveyAvailability();
-      sendJson(res, 200, {
-        source: hasGoogleCredentials() ? "google-calendar" : "demo",
-        availability
-      });
+      const availabilityResult = await getSurveyAvailabilityResult({ allowCalendarFallback: true });
+      sendJson(res, 200, availabilityResult);
       return;
     }
 
@@ -244,7 +241,8 @@ async function createSurveyBooking(booking) {
   }
 
   const typeKey = booking.survey_type === "Physical survey" ? "physical" : "video";
-  const availability = await getSurveyAvailability();
+  const availabilityResult = await getSurveyAvailabilityResult({ allowCalendarFallback: true });
+  const availability = availabilityResult.availability;
   const day = availability.find((item) => item.date === booking.survey_date);
 
   if (!day || !day[typeKey].includes(booking.appointment_time)) {
@@ -254,8 +252,23 @@ async function createSurveyBooking(booking) {
     };
   }
 
+  if (availabilityResult.source === "calendar-error") {
+    return {
+      ok: false,
+      message: "Live calendar availability could not be verified. Please try again shortly or call 01638 255 255."
+    };
+  }
+
   if (hasGoogleCredentials()) {
-    await createGoogleCalendarEvent(booking, typeKey);
+    try {
+      await createGoogleCalendarEvent(booking, typeKey);
+    } catch (error) {
+      console.warn(`Google calendar booking failed: ${error.message}`);
+      return {
+        ok: false,
+        message: "The survey time looked available, but Google Calendar could not save the booking. Please try again shortly or call 01638 255 255."
+      };
+    }
   } else {
     mockBookings.push({
       survey_date: booking.survey_date,
@@ -264,7 +277,14 @@ async function createSurveyBooking(booking) {
     });
   }
 
-  const emailResult = await sendSurveyBookingEmails(booking);
+  let emailResult = { sent: false };
+
+  try {
+    emailResult = await sendSurveyBookingEmails(booking);
+  } catch (error) {
+    console.warn(`Survey booking email failed: ${error.message}`);
+  }
+
   const bookingMessage = hasGoogleCredentials()
     ? "Survey booked in Google Calendar. The selected time is now blocked out."
     : "Demo booking saved locally. Add Google Calendar credentials to make this a real calendar booking.";
@@ -274,7 +294,7 @@ async function createSurveyBooking(booking) {
     emailSent: emailResult.sent,
     message: emailResult.sent
       ? `${bookingMessage} Confirmation emails have been sent.`
-      : bookingMessage
+      : `${bookingMessage} Confirmation emails could not be sent automatically, so the team will follow up manually.`
   };
 }
 
@@ -968,9 +988,26 @@ function validateBooking(booking) {
 }
 
 async function getSurveyAvailability() {
-  const calendarBusy = hasGoogleCredentials()
-    ? await getGoogleBusyRanges()
-    : [];
+  return (await getSurveyAvailabilityResult()).availability;
+}
+
+async function getSurveyAvailabilityResult({ allowCalendarFallback = false } = {}) {
+  let calendarBusy = [];
+  let source = hasGoogleCredentials() ? "google-calendar" : "demo";
+
+  if (hasGoogleCredentials()) {
+    try {
+      calendarBusy = await getGoogleBusyRanges();
+    } catch (error) {
+      if (!allowCalendarFallback) {
+        throw error;
+      }
+
+      console.warn(`Google calendar availability failed: ${error.message}`);
+      source = "calendar-error";
+    }
+  }
+
   const demoBusy = mockBookings.map((booking) => {
     const start = zonedTimeToUtc(`${booking.survey_date}T${booking.appointment_time}`, settings.timeZone);
     const end = new Date(start.getTime() + booking.duration_minutes * 60000);
@@ -1002,7 +1039,16 @@ async function getSurveyAvailability() {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 
-  return days;
+  const result = {
+    source,
+    availability: days
+  };
+
+  if (source === "calendar-error") {
+    result.message = "Live calendar availability could not be checked. Please refresh shortly or call 01638 255 255.";
+  }
+
+  return result;
 }
 
 function buildSlots(dateKey, typeKey, busyRanges, now) {
