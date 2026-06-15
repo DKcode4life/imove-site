@@ -35,6 +35,7 @@ const settings = {
   videoDurationMinutes: Number(process.env.VIDEO_SURVEY_DURATION_MINUTES || 30),
   physicalDurationMinutes: Number(process.env.PHYSICAL_SURVEY_DURATION_MINUTES || 60),
   mapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+  googlePlaceId: process.env.GOOGLE_PLACE_ID || process.env.GOOGLE_REVIEWS_PLACE_ID || "",
   publicSiteUrl: (process.env.PUBLIC_SITE_URL || "https://www.myimove.co.uk").replace(/\/+$/, "")
 };
 
@@ -91,6 +92,11 @@ const server = http.createServer(async (req, res) => {
       const request = await readJson(req);
       const result = await createContactRequest(request);
       sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/google-reviews" && req.method === "GET") {
+      sendJson(res, 200, await getGoogleReviews());
       return;
     }
 
@@ -534,6 +540,93 @@ async function getGoogleDistanceWithFallback(from, to) {
     ok: false,
     message: "We could not calculate that distance. Please check the locations or choose a preset mileage."
   };
+}
+
+async function getGoogleReviews() {
+  if (!settings.mapsApiKey || !settings.googlePlaceId) {
+    return {
+      source: "fallback",
+      message: "Google review settings are not configured.",
+      reviews: getFallbackReviews()
+    };
+  }
+
+  try {
+    const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+    url.searchParams.set("place_id", settings.googlePlaceId);
+    url.searchParams.set("fields", "name,rating,user_ratings_total,reviews,url");
+    url.searchParams.set("reviews_sort", "newest");
+    url.searchParams.set("reviews_no_translations", "true");
+    url.searchParams.set("key", settings.mapsApiKey);
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Google reviews lookup failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.status !== "OK") {
+      throw new Error(`Google reviews lookup failed: ${data.error_message || data.status}`);
+    }
+
+    const place = data.result || {};
+    const reviews = (place.reviews || []).slice(0, 3).map((review) => ({
+      authorName: review.author_name || "Google reviewer",
+      rating: Number(review.rating || 0),
+      text: review.text || "",
+      relativeTime: review.relative_time_description || "",
+      time: review.time || null,
+      authorUrl: review.author_url || "",
+      placeUrl: place.url || ""
+    }));
+
+    return {
+      source: "google",
+      placeName: place.name || "iMove",
+      rating: Number(place.rating || 0),
+      totalReviews: Number(place.user_ratings_total || 0),
+      reviews: reviews.length ? reviews : getFallbackReviews()
+    };
+  } catch (error) {
+    console.warn(`Google reviews failed: ${error.message}`);
+
+    return {
+      source: "fallback",
+      message: "Google reviews could not be loaded.",
+      reviews: getFallbackReviews()
+    };
+  }
+}
+
+function getFallbackReviews() {
+  return [
+    {
+      authorName: "Cara Mishra",
+      rating: 5,
+      text: "These guys really helped me out with my move. I was given very short notice and they were one of the only removal companies that could accommodate this.",
+      relativeTime: "",
+      authorUrl: "",
+      placeUrl: ""
+    },
+    {
+      authorName: "Malcolm Ewan",
+      rating: 5,
+      text: "Just used iMove again. Great job - efficient and friendly removal guys. Made the whole process almost pain-free.",
+      relativeTime: "",
+      authorUrl: "",
+      placeUrl: ""
+    },
+    {
+      authorName: "iMove customer",
+      rating: 5,
+      text: "Helpful, careful, and easy to deal with from start to finish.",
+      relativeTime: "",
+      authorUrl: "",
+      placeUrl: ""
+    }
+  ];
 }
 
 function formatGoogleLocation(value) {

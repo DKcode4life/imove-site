@@ -46,7 +46,106 @@ const galleryLightboxCount = document.querySelector("[data-gallery-lightbox-coun
 const galleryClose = document.querySelector("[data-gallery-close]");
 const galleryPrev = document.querySelector("[data-gallery-prev]");
 const galleryNext = document.querySelector("[data-gallery-next]");
+const googleReviewsGrid = document.querySelector("[data-google-reviews]");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const whatsappUrl = "https://wa.me/441638255255";
+
+const addFloatingWhatsAppButton = () => {
+  if (document.querySelector("[data-floating-whatsapp]")) return;
+
+  const link = document.createElement("a");
+  link.className = "floating-whatsapp";
+  link.href = whatsappUrl;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.title = "Chat with iMove on WhatsApp";
+  link.setAttribute("aria-label", "Chat with iMove on WhatsApp");
+  link.setAttribute("data-floating-whatsapp", "");
+  link.innerHTML = `
+    <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <path d="M16.02 4.02c-6.62 0-12 5.29-12 11.8 0 2.22.64 4.38 1.84 6.25l-1.2 5.86 6.08-1.86a12.25 12.25 0 0 0 5.28 1.21c6.62 0 12-5.29 12-11.8s-5.38-11.46-12-11.46Zm0 21.16c-1.68 0-3.32-.44-4.76-1.27l-.34-.2-3.58 1.1.72-3.46-.23-.36a9.34 9.34 0 0 1-1.53-5.17c0-5.31 4.36-9.63 9.72-9.63s9.72 4.32 9.72 9.63-4.36 9.36-9.72 9.36Zm5.34-7.03c-.29-.15-1.72-.84-1.99-.94-.27-.1-.46-.15-.66.15-.19.29-.76.94-.93 1.14-.17.19-.34.22-.63.07-.29-.15-1.24-.45-2.36-1.44-.87-.77-1.46-1.72-1.63-2.01-.17-.29-.02-.45.13-.59.13-.13.29-.34.44-.51.15-.17.19-.29.29-.49.1-.19.05-.36-.02-.51-.07-.15-.66-1.57-.9-2.15-.24-.56-.48-.49-.66-.5h-.56c-.19 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43s1.05 2.82 1.19 3.01c.15.19 2.07 3.12 5.02 4.38.7.3 1.25.48 1.68.62.7.22 1.34.19 1.85.12.56-.08 1.72-.69 1.96-1.36.24-.67.24-1.24.17-1.36-.07-.12-.27-.19-.56-.34Z"/>
+    </svg>`;
+
+  document.body.appendChild(link);
+};
+
+addFloatingWhatsAppButton();
+
+const fallbackGoogleReviews = [
+  {
+    authorName: "Cara Mishra",
+    rating: 5,
+    text: "These guys really helped me out with my move. I was given very short notice and they were one of the only removal companies that could accommodate this.",
+    relativeTime: ""
+  },
+  {
+    authorName: "Malcolm Ewan",
+    rating: 5,
+    text: "Just used iMove again. Great job - efficient and friendly removal guys. Made the whole process almost pain-free.",
+    relativeTime: ""
+  },
+  {
+    authorName: "iMove customer",
+    rating: 5,
+    text: "Helpful, careful, and easy to deal with from start to finish.",
+    relativeTime: ""
+  }
+];
+
+const renderStars = (rating) => {
+  const rounded = Math.max(0, Math.min(5, Math.round(Number(rating || 0))));
+  return `${"★".repeat(rounded)}${"☆".repeat(5 - rounded)}`;
+};
+
+const googleLogoSvg = `
+  <svg class="google-mark" viewBox="0 0 24 24" role="img" aria-label="Google">
+    <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/>
+    <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.85 0-5.27-1.93-6.13-4.52H2.18v2.84A11 11 0 0 0 12 23Z"/>
+    <path fill="#fbbc05" d="M5.87 14.11A6.62 6.62 0 0 1 5.5 12c0-.73.13-1.44.37-2.11V7.05H2.18A11 11 0 0 0 1 12c0 1.77.42 3.44 1.18 4.95l3.69-2.84Z"/>
+    <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.05l3.69 2.84C6.73 7.31 9.15 5.38 12 5.38Z"/>
+  </svg>`;
+
+const renderGoogleReviews = (reviews) => {
+  if (!googleReviewsGrid) return;
+
+  const safeReviews = (Array.isArray(reviews) && reviews.length ? reviews : fallbackGoogleReviews).slice(0, 3);
+  googleReviewsGrid.innerHTML = safeReviews.map((review) => {
+    const rating = Math.max(0, Math.min(5, Number(review.rating || 0)));
+    const stars = renderStars(rating);
+
+    return `
+      <figure class="review-card reveal visible">
+        <div class="review-card-head">
+          <div>
+            <figcaption>${escapeHtml(review.authorName || "Google reviewer")}</figcaption>
+            <span class="review-source">Google review${review.relativeTime ? ` · ${escapeHtml(review.relativeTime)}` : ""}</span>
+          </div>
+          ${googleLogoSvg}
+        </div>
+        <div class="review-stars" aria-label="${rating || 5} out of 5 stars">${stars}</div>
+        <blockquote>${escapeHtml(review.text || "Thank you for choosing iMove.")}</blockquote>
+      </figure>`;
+  }).join("");
+};
+
+const loadGoogleReviews = async () => {
+  if (!googleReviewsGrid) return;
+
+  try {
+    const response = await fetch("/api/google-reviews", { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error("Google reviews request failed");
+    }
+
+    const data = await response.json();
+    renderGoogleReviews(data.reviews);
+  } catch (error) {
+    renderGoogleReviews(fallbackGoogleReviews);
+  }
+};
+
+loadGoogleReviews();
 
 const formatFallbackDateKey = (date) => {
   const year = date.getFullYear();
@@ -172,11 +271,13 @@ let estimatorSettings = {
   highEstimatePercent: 0.26
 };
 
-const escapeHtml = (value) => String(value ?? "")
-  .replaceAll("&", "&amp;")
-  .replaceAll("<", "&lt;")
-  .replaceAll(">", "&gt;")
-  .replaceAll('"', "&quot;");
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
 
 const renderEstimatorOptions = (settings) => {
   if (!estimator || !settings?.estimator) return;
