@@ -51,6 +51,14 @@ const googleReviewsGrid = document.querySelector("[data-google-reviews]");
 const planningJourney = document.querySelector("[data-planning-journey]");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const whatsappUrl = "https://wa.me/441638255255";
+const heroCarouselImages = [
+  "header-1.jpeg",
+  "header-2.jpeg",
+  "header-3.jpeg",
+  "header-4.jpeg",
+  "header-5.jpeg",
+  "header-6.jpeg"
+];
 
 const addFloatingWhatsAppButton = () => {
   if (document.querySelector("[data-floating-whatsapp]")) return;
@@ -72,6 +80,59 @@ const addFloatingWhatsAppButton = () => {
 };
 
 addFloatingWhatsAppButton();
+
+const getSiteImageUrl = (fileName) => {
+  const assetPrefix = window.location.pathname.includes("/services/") ? "../" : "";
+  return new URL(`${assetPrefix}assets/site-images/${fileName}`, window.location.href).href;
+};
+
+const initialiseHeroCarousels = () => {
+  const heroSections = document.querySelectorAll([
+    ".hero",
+    ".booking-page-hero",
+    ".quote-page-hero",
+    ".gallery-hero",
+    ".services-hero",
+    ".planning-hero",
+    ".single-service-hero"
+  ].join(","));
+
+  if (!heroSections.length) return;
+
+  const imageUrls = heroCarouselImages.map(getSiteImageUrl);
+
+  heroSections.forEach((section, sectionIndex) => {
+    if (section.querySelector("[data-hero-carousel]")) return;
+
+    const carousel = document.createElement("div");
+    carousel.className = "hero-carousel";
+    carousel.setAttribute("aria-hidden", "true");
+    carousel.setAttribute("data-hero-carousel", "");
+
+    const startIndex = Math.floor(Math.random() * imageUrls.length);
+    const slides = imageUrls.map((imageUrl, imageIndex) => {
+      const slide = document.createElement("span");
+      slide.className = `hero-carousel-slide${imageIndex === startIndex ? " is-active" : ""}`;
+      slide.style.backgroundImage = `url("${imageUrl}")`;
+      carousel.appendChild(slide);
+      return slide;
+    });
+
+    section.classList.add("has-hero-carousel");
+    section.prepend(carousel);
+
+    if (reduceMotion || slides.length < 2) return;
+
+    let activeIndex = startIndex;
+    window.setInterval(() => {
+      slides[activeIndex].classList.remove("is-active");
+      activeIndex = (activeIndex + 1) % slides.length;
+      slides[activeIndex].classList.add("is-active");
+    }, 7000 + sectionIndex * 250);
+  });
+};
+
+initialiseHeroCarousels();
 
 const fallbackGoogleReviews = [
   {
