@@ -250,7 +250,7 @@ let availabilityRefreshTimer;
 
 const stepContent = {
   survey: {
-    image: "https://myimove.co.uk/wp-content/uploads/2025/04/a99f7334-879c-46c5-ab7c-46b70f8e159e.jpg",
+    image: "assets/site-images/residential-moves.jpg",
     alt: "Virtual home survey on a phone",
     eyebrow: "Step 1",
     title: "Book a house survey",
@@ -259,7 +259,7 @@ const stepContent = {
     secondary: "Book a home visit"
   },
   quotes: {
-    image: "https://myimove.co.uk/wp-content/uploads/2025/04/photo-1631557777232-a2632ae3c67d-scaled.jpg",
+    image: "assets/site-images/full-packing-service.jpg",
     alt: "Planning a move and comparing quotes",
     eyebrow: "Step 2",
     title: "Get at least 3 quotes",
@@ -268,7 +268,7 @@ const stepContent = {
     secondary: "Ask a question"
   },
   date: {
-    image: "https://myimove.co.uk/wp-content/uploads/2025/04/choose-moving-day.jpg",
+    image: "assets/site-images/residential-moves.jpg",
     alt: "Moving day circled on a calendar",
     eyebrow: "Step 3",
     title: "Secure your moving date",
@@ -277,7 +277,7 @@ const stepContent = {
     secondary: "Call the team"
   },
   prepare: {
-    image: "https://myimove.co.uk/wp-content/uploads/2025/04/moving-day.webp",
+    image: "assets/site-images/full-packing-service.jpg",
     alt: "Packed moving boxes labelled by room",
     eyebrow: "Step 4",
     title: "Prepare for the move",

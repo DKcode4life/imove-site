@@ -259,7 +259,7 @@ textarea {
   inset: 0;
   background:
     linear-gradient(180deg, rgba(5, 5, 109, 0.9), rgba(12, 42, 94, 0.8) 55%, rgba(1, 167, 253, 0.72)),
-    url("https://myimove.co.uk/wp-content/uploads/2025/04/WhatsApp-Image-2025-04-24-at-21.18.50-1-scaled.jpeg") center / cover no-repeat;
+    url("assets/site-images/storage-facility.webp") center / cover no-repeat;
 }
 
 .hero-grid {
@@ -923,7 +923,7 @@ h3 {
   inset: 0;
   background:
     linear-gradient(180deg, rgba(5, 5, 109, 0.88), rgba(12, 42, 94, 0.78) 56%, rgba(1, 167, 253, 0.7)),
-    url("https://myimove.co.uk/wp-content/uploads/2025/04/WhatsApp-Image-2025-04-24-at-21.18.50-1-scaled.jpeg") center / cover no-repeat;
+    url("assets/site-images/storage-facility.webp") center / cover no-repeat;
 }
 
 .booking-page-grid {
@@ -1163,7 +1163,7 @@ h3 {
   inset: 0;
   background:
     linear-gradient(180deg, rgba(5, 5, 109, 0.9), rgba(12, 42, 94, 0.76) 52%, rgba(1, 167, 253, 0.68)),
-    url("https://myimove.co.uk/wp-content/uploads/2025/04/21794b5c-c3e3-4c67-b2eb-bc3e84fa6cdd.jpg") center / cover no-repeat;
+    url("assets/site-images/residential-moves.jpg") center / cover no-repeat;
 }
 
 .quote-page-grid {
@@ -1510,7 +1510,7 @@ h3 {
   inset: 0;
   background:
     linear-gradient(100deg, rgba(4, 12, 35, 0.92), rgba(5, 5, 109, 0.62) 48%, rgba(1, 167, 253, 0.22)),
-    url("https://myimove.co.uk/wp-content/uploads/2025/04/WhatsApp-Image-2025-04-24-at-21.18.50-1-scaled.jpeg") center / cover no-repeat;
+    url("assets/site-images/storage-facility.webp") center / cover no-repeat;
   transform: scale(1.02);
 }
 
@@ -2179,7 +2179,7 @@ h3 {
   inset: 0;
   background:
     linear-gradient(180deg, rgba(5, 5, 109, 0.86), rgba(12, 42, 94, 0.72)),
-    url("https://myimove.co.uk/wp-content/uploads/2025/04/dbe9ef93-b310-4573-98cf-8c29589526bc-768x513.jpg") center / cover no-repeat;
+    url("assets/site-images/household-rubbish-removals.jpg") center / cover no-repeat;
 }
 
 .services-hero-grid {
@@ -2770,7 +2770,7 @@ h3 {
   color: var(--white);
   background:
     linear-gradient(135deg, rgba(5, 5, 109, 0.92), rgba(1, 167, 253, 0.74)),
-    url("https://myimove.co.uk/wp-content/uploads/2025/04/WhatsApp-Image-2025-04-24-at-21.18.50-1-scaled.jpeg") center / cover no-repeat;
+    url("assets/site-images/storage-facility.webp") center / cover no-repeat;
 }
 
 .planning-hero-grid {
