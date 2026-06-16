@@ -250,7 +250,7 @@ let availabilityRefreshTimer;
 
 const stepContent = {
   survey: {
-    image: "assets/site-images/residential-moves.jpg",
+    image: "assets/site-images/survey.jpg",
     alt: "Virtual home survey on a phone",
     eyebrow: "Step 1",
     title: "Book a house survey",
@@ -259,7 +259,7 @@ const stepContent = {
     secondary: "Book a home visit"
   },
   quotes: {
-    image: "assets/site-images/full-packing-service.jpg",
+    image: "assets/site-images/quotes.jpg",
     alt: "Planning a move and comparing quotes",
     eyebrow: "Step 2",
     title: "Get at least 3 quotes",
@@ -268,7 +268,7 @@ const stepContent = {
     secondary: "Ask a question"
   },
   date: {
-    image: "assets/site-images/residential-moves.jpg",
+    image: "assets/site-images/date.jpg",
     alt: "Moving day circled on a calendar",
     eyebrow: "Step 3",
     title: "Secure your moving date",
@@ -277,7 +277,7 @@ const stepContent = {
     secondary: "Call the team"
   },
   prepare: {
-    image: "assets/site-images/full-packing-service.jpg",
+    image: "assets/site-images/prepare.webp",
     alt: "Packed moving boxes labelled by room",
     eyebrow: "Step 4",
     title: "Prepare for the move",
