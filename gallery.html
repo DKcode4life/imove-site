@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260615-4">
+    <link rel="stylesheet" href="styles.css?v=20260616-10">
   </head>
   <body>
     <header class="site-header" data-header>
@@ -26,7 +26,7 @@
         <a href="index.html#top">Home</a>
         <a href="services.html">Services</a>
         <a class="active" href="gallery.html">Gallery</a>
-        <a href="index.html#steps">Planning</a>
+        <a href="planning.html">Planning</a>
         <a href="index.html#contact">Contact</a>
         <a class="mobile-survey-link" href="book-survey.html">Book a Survey</a>
       </nav>
@@ -37,7 +37,7 @@
       </div>
     </header>
 
-    <main id="top">
+    <main id="top" class="gallery-page">
       <section class="gallery-hero">
         <div class="gallery-hero-bg" aria-hidden="true"></div>
         <div class="wrap gallery-hero-grid">
@@ -51,9 +51,12 @@
             </div>
           </div>
           <aside class="gallery-feature-card">
-            <span>36</span>
-            <strong>project moments</strong>
-            <p>Browse the work, open any photo, and move through the gallery with arrows, buttons, or touch-friendly controls.</p>
+            <img src="assets/gallery/14.jpeg" alt="Blue Porsche prepared for vehicle transport">
+            <div>
+              <span>36</span>
+              <strong>project moments</strong>
+              <p>Real removals, export packing, storage, specialist handling, and vehicle transport work from the iMove team.</p>
+            </div>
           </aside>
         </div>
       </section>
@@ -66,13 +69,19 @@
             <p>From vehicle transportation and export packing to local moves, import container deliveries, jacuzzi relocations, grand piano moves, and secure storage, these are the details that show how iMove handles the unusual as well as the everyday.</p>
           </div>
 
-          <div class="gallery-filter-bar" aria-label="Gallery filters">
-            <button class="active" type="button" data-gallery-filter="all">All</button>
-            <button type="button" data-gallery-filter="moves">Moves</button>
-            <button type="button" data-gallery-filter="packing">Packing</button>
-            <button type="button" data-gallery-filter="specialist">Specialist</button>
-            <button type="button" data-gallery-filter="storage">Storage</button>
-            <button type="button" data-gallery-filter="vehicles">Vehicles</button>
+          <div class="gallery-toolbar">
+            <div>
+              <span>Curated work archive</span>
+              <strong>Homes, storage, packing, specialist moves, and vehicle transport.</strong>
+            </div>
+            <div class="gallery-filter-bar" aria-label="Gallery filters">
+              <button class="active" type="button" data-gallery-filter="all">All</button>
+              <button type="button" data-gallery-filter="moves">Moves</button>
+              <button type="button" data-gallery-filter="packing">Packing</button>
+              <button type="button" data-gallery-filter="specialist">Specialist</button>
+              <button type="button" data-gallery-filter="storage">Storage</button>
+              <button type="button" data-gallery-filter="vehicles">Vehicles</button>
+            </div>
           </div>
 
           <div class="gallery-masonry" data-gallery-grid>
@@ -131,16 +140,23 @@
     </main>
 
     <div class="gallery-lightbox" data-gallery-lightbox hidden>
-      <button class="gallery-lightbox-close" type="button" data-gallery-close aria-label="Close gallery viewer">&times;</button>
-      <button class="gallery-lightbox-nav prev" type="button" data-gallery-prev aria-label="Previous image">&lsaquo;</button>
-      <figure>
+      <button class="gallery-lightbox-close" type="button" data-gallery-close aria-label="Close gallery viewer">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <button class="gallery-lightbox-nav prev" type="button" data-gallery-prev aria-label="Previous image">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <figure class="gallery-lightbox-frame">
         <img src="" alt="" data-gallery-lightbox-image>
         <figcaption>
           <span data-gallery-lightbox-count></span>
           <strong data-gallery-lightbox-title></strong>
+          <small>iMove project gallery</small>
         </figcaption>
       </figure>
-      <button class="gallery-lightbox-nav next" type="button" data-gallery-next aria-label="Next image">&rsaquo;</button>
+      <button class="gallery-lightbox-nav next" type="button" data-gallery-next aria-label="Next image">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
     </div>
 
     <footer class="site-footer">
@@ -169,6 +185,6 @@
       </div>
     </footer>
 
-    <script src="script.js?v=20260615-4"></script>
+    <script src="script.js?v=20260616-10"></script>
   </body>
 </html>

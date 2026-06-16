@@ -48,6 +48,7 @@ const galleryPrev = document.querySelector("[data-gallery-prev]");
 const galleryNext = document.querySelector("[data-gallery-next]");
 const googleReviewSummary = document.querySelector("[data-google-review-summary]");
 const googleReviewsGrid = document.querySelector("[data-google-reviews]");
+const planningJourney = document.querySelector("[data-planning-journey]");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const whatsappUrl = "https://wa.me/441638255255";
 
@@ -271,7 +272,7 @@ const stepContent = {
     alt: "Moving day circled on a calendar",
     eyebrow: "Step 3",
     title: "Secure your moving date",
-    body: "Book early to reserve the team for your important day. iMove does not require a deposit to secure your moving date.",
+    body: "Book early to reserve the team for your important day. A low 10% deposit secures your moving date and keeps the plan moving.",
     primary: "Reserve a date",
     secondary: "Call the team"
   },
@@ -841,6 +842,10 @@ const revealSelectors = [
   ".gallery-hero-copy",
   ".gallery-feature-card",
   ".gallery-page-heading",
+  ".planning-hero-copy",
+  ".planning-hero-panel",
+  ".planning-road-heading",
+  ".planning-next-grid > *",
   ".quote-page-copy",
   ".quote-request-card",
   ".quote-help-card",
@@ -898,6 +903,74 @@ if (reduceMotion) {
 
   revealItems.forEach((item) => revealObserver.observe(item));
 }
+
+const initialisePlanningJourney = () => {
+  if (!planningJourney) return;
+
+  const scene = planningJourney.querySelector("[data-road-scene]");
+  const path = planningJourney.querySelector("[data-road-path]");
+  const van = planningJourney.querySelector("[data-road-van]");
+  const stops = [...planningJourney.querySelectorAll("[data-journey-stop]")]
+    .map((stop) => ({
+      element: stop,
+      progress: Number(stop.dataset.progress || 0)
+    }));
+
+  if (!scene || !path || !van || !stops.length) return;
+
+  if (reduceMotion) {
+    stops.forEach(({ element }) => element.classList.add("is-active", "is-passed", "is-revealed"));
+    return;
+  }
+
+  const viewBoxWidth = 1000;
+  const viewBoxHeight = 2600;
+  const pathLength = path.getTotalLength();
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  let ticking = false;
+
+  const updateJourney = () => {
+    ticking = false;
+
+    const sceneRect = scene.getBoundingClientRect();
+    const viewportAnchor = window.innerHeight * 0.5;
+    const progress = clamp((viewportAnchor - sceneRect.top) / Math.max(sceneRect.height, 1), 0, 1);
+    const pathPoint = path.getPointAtLength(pathLength * progress);
+    const lookAheadPoint = path.getPointAtLength(clamp(pathLength * progress + 12, 0, pathLength));
+    const angle = Math.atan2(lookAheadPoint.y - pathPoint.y, lookAheadPoint.x - pathPoint.x) * 180 / Math.PI;
+    const relativeAngle = ((angle - 180 + 540) % 360) - 180;
+    const driveAngle = clamp(relativeAngle * 0.18, -16, 16);
+    const x = (pathPoint.x / viewBoxWidth) * scene.offsetWidth;
+    const y = (pathPoint.y / viewBoxHeight) * scene.offsetHeight;
+
+    van.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${driveAngle}deg)`;
+
+    const nearestStop = stops.reduce((nearest, stop) => {
+      const distance = Math.abs(progress - stop.progress);
+      return distance < nearest.distance ? { ...stop, distance } : nearest;
+    }, { element: stops[0].element, progress: stops[0].progress, distance: Infinity });
+
+    stops.forEach(({ element, progress: stopProgress }) => {
+      element.classList.toggle("is-active", element === nearestStop.element);
+      element.classList.toggle("is-passed", progress >= stopProgress);
+      if (progress >= stopProgress - 0.06) {
+        element.classList.add("is-revealed");
+      }
+    });
+  };
+
+  const requestJourneyUpdate = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(updateJourney);
+  };
+
+  window.addEventListener("scroll", requestJourneyUpdate, { passive: true });
+  window.addEventListener("resize", requestJourneyUpdate);
+  updateJourney();
+};
+
+initialisePlanningJourney();
 
 const getSurveyType = () => {
   const selected = surveyForm?.querySelector("input[name='survey_type']:checked");
@@ -1222,6 +1295,16 @@ const updateGalleryLightbox = (item) => {
   galleryLightboxImage.alt = image?.alt || item.dataset.title || "iMove gallery image";
   galleryLightboxTitle.textContent = item.dataset.title || image?.alt || "iMove gallery";
   galleryLightboxCount.textContent = `${visiblePosition + 1} of ${visibleItems.length}`;
+
+  if (!reduceMotion && typeof galleryLightboxImage.animate === "function") {
+    galleryLightboxImage.animate([
+      { opacity: 0.42, transform: "scale(0.985)" },
+      { opacity: 1, transform: "scale(1)" }
+    ], {
+      duration: 320,
+      easing: "cubic-bezier(0.16, 1, 0.3, 1)"
+    });
+  }
 };
 
 const openGalleryLightbox = (item) => {
