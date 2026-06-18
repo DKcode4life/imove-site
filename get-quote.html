@@ -125,7 +125,15 @@
                 <div class="quote-form-grid">
                   <label class="form-field">
                     <span>Which floor?</span>
-                    <input type="text" name="flat_floor" placeholder="e.g. Ground, 2nd, 5th" data-quote-flat-required>
+                    <select name="flat_floor" data-quote-flat-required>
+                      <option value="">Select floor</option>
+                      <option value="Ground">Ground</option>
+                      <option value="First">First</option>
+                      <option value="Second">Second</option>
+                      <option value="Third">Third</option>
+                      <option value="Fourth">Fourth</option>
+                      <option value="Fifth">Fifth</option>
+                    </select>
                   </label>
                   <label class="form-field">
                     <span>Is there a lift?</span>
