@@ -51,6 +51,8 @@ const crmSettings = {
   apiKey: process.env.CRM_API_KEY || ""
 };
 
+const ZOOM_SURVEY_URL = "https://us05web.zoom.us/j/5757163859?pwd=G6GO9aoYEtsukhye4UxaoYasTXD9HL.1";
+
 console.log(`[crm] config CRM_API_KEY set=${Boolean(crmSettings.apiKey)} CRM_API_URL=${crmSettings.apiUrl}`);
 
 let crmMissingKeyWarningLogged = false;
@@ -993,7 +995,7 @@ function buildSurveyCrmPayload(booking) {
       `Date: ${booking.survey_date}`,
       `Time: ${booking.appointment_time}`,
       booking.address ? `Survey address: ${booking.address}` : "",
-      isVideoSurvey ? "Zoom link: https://us05web.zoom.us/j/5757163859?pwd=G6GO9aoYEtsukhye4UxaoYasTXD9HL.1" : "",
+      isVideoSurvey ? `Zoom link: ${ZOOM_SURVEY_URL}` : "",
       "Source: iMove website survey booking form"
     ])
   };
@@ -1055,12 +1057,11 @@ function joinCrmMessage(lines) {
 
 async function sendSurveyBookingEmails(booking) {
   const isVideoSurvey = booking.survey_type !== "Physical survey";
-  const zoomSurveyUrl = "https://us05web.zoom.us/j/5757163859?pwd=G6GO9aoYEtsukhye4UxaoYasTXD9HL.1";
   const surveyAction = isVideoSurvey
     ? {
         actionText: "Here is your Zoom link for your convenience.",
         actionLabel: "Join your Zoom video survey",
-        actionUrl: zoomSurveyUrl
+        actionUrl: ZOOM_SURVEY_URL
       }
     : {};
   const appointmentLabel = isVideoSurvey ? "Zoom Video Survey" : "Survey Appointment";
@@ -1074,7 +1075,7 @@ async function sendSurveyBookingEmails(booking) {
     `Survey type: ${booking.survey_type}`,
     `Date: ${booking.survey_date}`,
     `Time: ${booking.appointment_time}`,
-    isVideoSurvey ? `Zoom link: ${zoomSurveyUrl}` : "",
+    isVideoSurvey ? `Zoom link: ${ZOOM_SURVEY_URL}` : "",
     "",
     `Name: ${booking.name}`,
     `Phone: ${booking.phone}`,
@@ -1099,7 +1100,7 @@ async function sendSurveyBookingEmails(booking) {
       `Survey type: ${booking.survey_type}`,
       `Date: ${booking.survey_date}`,
       `Time: ${booking.appointment_time}`,
-      isVideoSurvey ? `Zoom link: ${zoomSurveyUrl}` : "",
+      isVideoSurvey ? `Zoom link: ${ZOOM_SURVEY_URL}` : "",
       "",
       "Our crew will get in touch with you if we need to confirm any details before the appointment.",
       "",
@@ -1477,13 +1478,7 @@ async function createGoogleCalendarEvent(booking, typeKey) {
   const endDate = new Date(startDate.getTime() + getDurationMinutes(typeKey) * 60000);
   const surveyLabel = booking.survey_type === "Physical survey" ? "Physical survey" : "Video survey";
   const address = booking.address || "";
-  const description = [
-    `Name: ${booking.name}`,
-    `Phone: ${booking.phone}`,
-    `Email: ${booking.email}`,
-    address ? `Address: ${address}` : "",
-    "Source: iMove website booking form"
-  ].filter(Boolean).join("\n");
+  const description = buildGoogleCalendarEventDescription(booking, typeKey);
 
   const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(targetCalendarId)}/events`, {
     method: "POST",
@@ -1513,6 +1508,20 @@ async function createGoogleCalendarEvent(booking, typeKey) {
   }
 
   return response.json();
+}
+
+function buildGoogleCalendarEventDescription(booking, typeKey) {
+  const address = booking.address || "";
+  const isVideoSurvey = typeKey === "video";
+
+  return [
+    `Name: ${booking.name}`,
+    `Phone: ${booking.phone}`,
+    `Email: ${booking.email}`,
+    address ? `Address: ${address}` : "",
+    isVideoSurvey ? `Zoom link: ${ZOOM_SURVEY_URL}` : "",
+    "Source: iMove website booking form"
+  ].filter(Boolean).join("\n");
 }
 
 async function getGoogleAccessToken() {
