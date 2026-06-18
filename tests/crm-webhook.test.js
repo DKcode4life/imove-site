@@ -187,6 +187,11 @@ test("form submissions send best-effort CRM webhooks after existing handlers suc
 
   assert.equal(received[3].body.full_name, "Dan Survey");
   assert.equal(received[3].body.preferred_move_date, surveyDay.date);
+  assert.equal(received[3].body.survey_type, "video");
+  assert.equal(received[3].body.survey_date, surveyDay.date);
+  assert.equal(received[3].body.survey_time, surveyDay.video[0]);
+  assert.match(received[3].body.survey_date, /^\d{4}-\d{2}-\d{2}$/);
+  assert.match(received[3].body.survey_time, /^\d{2}:\d{2}$/);
   assert.match(received[3].body.message, /Survey type: Video survey/);
   assert.match(received[3].body.message, new RegExp(`Time: ${surveyDay.video[0]}`));
 });

@@ -14,11 +14,11 @@ test("flat floor is selected from fixed options on the quote form", () => {
 
   assert.deepEqual(options, [
     { value: "", label: "Select floor" },
-    { value: "Ground", label: "Ground" },
-    { value: "First", label: "First" },
-    { value: "Second", label: "Second" },
-    { value: "Third", label: "Third" },
-    { value: "Fourth", label: "Fourth" },
-    { value: "Fifth", label: "Fifth" }
+    { value: "Ground floor", label: "Ground floor" },
+    { value: "1st floor", label: "1st floor" },
+    { value: "2nd floor", label: "2nd floor" },
+    { value: "3rd floor", label: "3rd floor" },
+    { value: "4th floor", label: "4th floor" },
+    { value: "5th floor", label: "5th floor" }
   ]);
 });

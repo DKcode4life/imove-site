@@ -973,7 +973,10 @@ function buildQuoteCrmPayload(request) {
 }
 
 function buildSurveyCrmPayload(booking) {
-  const isVideoSurvey = booking.survey_type !== "Physical survey";
+  const surveyTypeText = String(booking.survey_type || "").toLowerCase();
+  const isVideoSurvey = surveyTypeText.includes("video") || surveyTypeText.includes("zoom");
+  const surveyDate = normalizeCrmSurveyDate(booking.survey_date);
+  const surveyTime = normalizeCrmSurveyTime(booking.appointment_time);
 
   return {
     form: "survey",
@@ -982,6 +985,9 @@ function buildSurveyCrmPayload(booking) {
     phone: booking.phone,
     from_address: booking.address,
     preferred_move_date: booking.survey_date,
+    survey_type: isVideoSurvey ? "video" : "physical",
+    survey_date: surveyDate,
+    survey_time: surveyTime,
     message: joinCrmMessage([
       `Survey type: ${booking.survey_type}`,
       `Date: ${booking.survey_date}`,
@@ -991,6 +997,45 @@ function buildSurveyCrmPayload(booking) {
       "Source: iMove website survey booking form"
     ])
   };
+}
+
+function normalizeCrmSurveyDate(value) {
+  const date = String(value || "").trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return undefined;
+  }
+
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsed.getUTCFullYear() !== year
+    || parsed.getUTCMonth() !== month - 1
+    || parsed.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+
+  return date;
+}
+
+function normalizeCrmSurveyTime(value) {
+  const time = String(value || "").trim();
+  const match = time.match(/^(\d{1,2}):(\d{2})$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours > 23 || minutes > 59) {
+    return undefined;
+  }
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 function compactCrmPayload(payload) {
