@@ -40,6 +40,18 @@ VIDEO_SURVEY_DURATION_MINUTES=30
 PHYSICAL_SURVEY_DURATION_MINUTES=60
 ```
 
+Optional form delivery and CRM variables:
+
+```env
+RESEND_API_KEY=
+ESTIMATE_REQUEST_TO=info@myimove.co.uk
+ESTIMATE_REQUEST_FROM=iMove Website <onboarding@resend.dev>
+CRM_API_URL=https://crm.myimove.co.uk/api/intake
+CRM_API_KEY=
+```
+
+`CRM_API_KEY` is the same secret set as `API_KEY` on the CRM host. Keep it server-side only in Railway Variables or your private local `.env` file.
+
 Railway provides a temporary public domain for the deployed service. When the real website is ready, point the production domain to the Railway service.
 
 ## Database note

@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const root = process.cwd();
 const port = Number(process.env.PORT || 8080);
@@ -44,6 +45,15 @@ const emailSettings = {
   from: process.env.ESTIMATE_REQUEST_FROM || "iMove Website <onboarding@resend.dev>",
   to: process.env.ESTIMATE_REQUEST_TO || process.env.CONTACT_EMAIL || "info@myimove.co.uk"
 };
+
+const crmSettings = {
+  apiUrl: process.env.CRM_API_URL || "https://crm.myimove.co.uk/api/intake",
+  apiKey: process.env.CRM_API_KEY || ""
+};
+
+console.log(`[crm] config CRM_API_KEY set=${Boolean(crmSettings.apiKey)} CRM_API_URL=${crmSettings.apiUrl}`);
+
+let crmMissingKeyWarningLogged = false;
 
 const mockBookings = [];
 const mockEstimateRequests = [];
@@ -289,6 +299,8 @@ async function createSurveyBooking(booking) {
     console.warn(`Survey booking email failed: ${error.message}`);
   }
 
+  await sendToCrm(buildSurveyCrmPayload(booking));
+
   const bookingMessage = needsManualCalendarConfirmation
     ? "Survey booking request received. Live Google Calendar could not be checked, so the team will manually confirm the appointment."
     : hasGoogleCredentials()
@@ -317,6 +329,7 @@ async function createEstimateRequest(request) {
   });
 
   const emailResult = await sendEstimateRequestEmails(request);
+  await sendToCrm(buildEstimateCrmPayload(request));
 
   return {
     ok: true,
@@ -410,6 +423,7 @@ async function createQuoteRequest(request) {
   });
 
   const emailResult = await sendQuoteRequestEmails(request);
+  await sendToCrm(buildQuoteCrmPayload(request));
 
   return {
     ok: true,
@@ -820,6 +834,8 @@ async function createContactRequest(request) {
     replyTo: request.email
   });
 
+  await sendToCrm(buildContactCrmPayload(request));
+
   return {
     ok: true,
     emailSent: emailResult.sent,
@@ -846,6 +862,150 @@ function validateContactRequest(request) {
   }
 
   return { ok: true };
+}
+
+async function sendToCrm(payload) {
+  const body = compactCrmPayload({
+    ...payload,
+    submission_id: crypto.randomUUID()
+  });
+
+  if (!body.full_name || (!body.email && !body.phone)) {
+    console.warn(`CRM webhook skipped for ${body.form || "unknown form"}: full_name and email or phone are required.`);
+    return { sent: false, skipped: true };
+  }
+
+  if (!crmSettings.apiKey) {
+    if (!crmMissingKeyWarningLogged) {
+      console.warn("[crm] skipped: CRM_API_KEY is not configured.");
+      crmMissingKeyWarningLogged = true;
+    }
+    return { sent: false, skipped: true };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    console.log(`[crm] posting to ${crmSettings.apiUrl}`);
+    const response = await fetch(crmSettings.apiUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${crmSettings.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    const responseText = await response.text();
+    console.log(`[crm] response ${response.status} ${responseText.slice(0, 500)}`);
+
+    if (!response.ok) {
+      throw new Error(`CRM responded with ${response.status}: ${responseText.slice(0, 240)}`);
+    }
+
+    return {
+      sent: true,
+      status: response.status,
+      body: responseText ? JSON.parse(responseText) : null
+    };
+  } catch (error) {
+    console.warn(`[crm] ERROR ${error.message}`);
+    return { sent: false, error: error.message };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function buildContactCrmPayload(request) {
+  return {
+    form: "contact",
+    full_name: request.name,
+    email: request.email,
+    phone: request.phone,
+    message: request.message
+  };
+}
+
+function buildEstimateCrmPayload(request) {
+  const customer = request.customer || {};
+  const estimate = request.estimate || {};
+  const extras = Array.isArray(request.extras) && request.extras.length ? request.extras.join(", ") : "None selected";
+
+  return {
+    form: "callback",
+    full_name: customer.name,
+    email: customer.email,
+    phone: customer.phone,
+    property_size: request.property?.label,
+    message: joinCrmMessage([
+      customer.message ? `Customer message: ${customer.message}` : "",
+      `Estimate: GBP${estimate.low} - GBP${estimate.high}`,
+      estimate.volume ? `Volume: ~${estimate.volume} cu ft` : "",
+      request.property?.label ? `Property: ${request.property.label}` : "",
+      request.furnished?.label ? `Furnished: ${request.furnished.label}` : "",
+      request.distance?.label ? `Distance: ${request.distance.label}` : "",
+      `Extras: ${extras}`,
+      "Source: iMove website instant estimator"
+    ])
+  };
+}
+
+function buildQuoteCrmPayload(request) {
+  const isFlat = request.property_type === "Flat / apartment";
+
+  return {
+    form: "quote",
+    full_name: request.full_name,
+    email: request.email,
+    phone: request.phone,
+    from_address: request.moving_from,
+    to_address: request.moving_to,
+    preferred_move_date: request.move_date,
+    property_size: [request.property_type, request.rooms].filter(Boolean).join(", "),
+    message: joinCrmMessage([
+      isFlat ? `Flat floor: ${request.flat_floor}` : "",
+      isFlat ? `Lift available: ${request.has_lift}` : "",
+      request.notes ? `Notes: ${request.notes}` : "Notes: No notes provided",
+      "Source: iMove website get a quote page"
+    ])
+  };
+}
+
+function buildSurveyCrmPayload(booking) {
+  const isVideoSurvey = booking.survey_type !== "Physical survey";
+
+  return {
+    form: "survey",
+    full_name: booking.name,
+    email: booking.email,
+    phone: booking.phone,
+    from_address: booking.address,
+    preferred_move_date: booking.survey_date,
+    message: joinCrmMessage([
+      `Survey type: ${booking.survey_type}`,
+      `Date: ${booking.survey_date}`,
+      `Time: ${booking.appointment_time}`,
+      booking.address ? `Survey address: ${booking.address}` : "",
+      isVideoSurvey ? "Zoom link: https://us05web.zoom.us/j/5757163859?pwd=G6GO9aoYEtsukhye4UxaoYasTXD9HL.1" : "",
+      "Source: iMove website survey booking form"
+    ])
+  };
+}
+
+function compactCrmPayload(payload) {
+  return Object.fromEntries(
+    Object.entries(payload)
+      .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "")
+      .map(([key, value]) => [key, typeof value === "string" ? value.trim() : value])
+  );
+}
+
+function joinCrmMessage(lines) {
+  return lines
+    .map((line) => String(line || "").trim())
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function sendSurveyBookingEmails(booking) {
