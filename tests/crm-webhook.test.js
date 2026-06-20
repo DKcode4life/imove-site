@@ -46,6 +46,7 @@ async function postJson(path, payload) {
   const body = await response.json();
   assert.equal(response.status, 200, `${path} should return 200: ${JSON.stringify(body)}`);
   assert.equal(body.ok, true, `${path} should return ok=true: ${JSON.stringify(body)}`);
+  return body;
 }
 
 test("form submissions send best-effort CRM webhooks after existing handlers succeed", async (t) => {
@@ -95,6 +96,27 @@ test("form submissions send best-effort CRM webhooks after existing handlers suc
   });
 
   await waitForWebsite();
+
+  await postJson("/api/contact-requests", {
+    website: "https://spam.example"
+  });
+
+  await postJson("/api/estimate-requests", {
+    customer: {
+      website: "https://spam.example"
+    }
+  });
+
+  await postJson("/api/quote-requests", {
+    website: "https://spam.example"
+  });
+
+  await postJson("/api/survey-bookings", {
+    website: "https://spam.example"
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(received.length, 0, "honeypot submissions should not be sent to the CRM");
 
   await postJson("/api/contact-requests", {
     name: "Alice Contact",

@@ -62,6 +62,13 @@ const mockEstimateRequests = [];
 const mockQuoteRequests = [];
 const mockContactRequests = [];
 
+const honeypotSuccessMessages = {
+  contact: "Thank you, your enquiry has been received and a member of staff will contact you very soon.",
+  callback: "Thank you, your request has been received and a member of staff will contact you very soon.",
+  quote: "Thank you, your quote request has been received and a member of staff will contact you very soon.",
+  survey: "Thank you, your survey booking request has been received and the team will contact you very soon."
+};
+
 const server = http.createServer(async (req, res) => {
   try {
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
@@ -251,7 +258,36 @@ function requireAdmin(req, res) {
   return false;
 }
 
+function getHoneypotValue(payload) {
+  return String(
+    payload?.website ||
+      payload?.customer?.website ||
+      payload?.company_website ||
+      payload?.customer?.company_website ||
+      ""
+  ).trim();
+}
+
+function getHoneypotBlock(form, payload) {
+  if (!getHoneypotValue(payload)) {
+    return null;
+  }
+
+  console.warn(`[spam] blocked form=${form} reason=honeypot`);
+  return {
+    ok: true,
+    emailSent: false,
+    message: honeypotSuccessMessages[form] || "Thank you, your request has been received."
+  };
+}
+
 async function createSurveyBooking(booking) {
+  const honeypotBlock = getHoneypotBlock("survey", booking);
+
+  if (honeypotBlock) {
+    return honeypotBlock;
+  }
+
   const validation = validateBooking(booking);
 
   if (!validation.ok) {
@@ -319,6 +355,12 @@ async function createSurveyBooking(booking) {
 }
 
 async function createEstimateRequest(request) {
+  const honeypotBlock = getHoneypotBlock("callback", request);
+
+  if (honeypotBlock) {
+    return honeypotBlock;
+  }
+
   const validation = validateEstimateRequest(request);
 
   if (!validation.ok) {
@@ -413,6 +455,12 @@ async function sendEstimateRequestEmails(request) {
 }
 
 async function createQuoteRequest(request) {
+  const honeypotBlock = getHoneypotBlock("quote", request);
+
+  if (honeypotBlock) {
+    return honeypotBlock;
+  }
+
   const validation = validateQuoteRequest(request);
 
   if (!validation.ok) {
@@ -795,6 +843,12 @@ async function sendQuoteRequestEmails(request) {
 }
 
 async function createContactRequest(request) {
+  const honeypotBlock = getHoneypotBlock("contact", request);
+
+  if (honeypotBlock) {
+    return honeypotBlock;
+  }
+
   const validation = validateContactRequest(request);
 
   if (!validation.ok) {
